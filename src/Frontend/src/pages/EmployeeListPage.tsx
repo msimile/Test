@@ -41,7 +41,7 @@ export default function EmployeeListPage() {
   const [sortColumn, setSortColumn] = useState("firstName");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
-  // Nuovo state per il numero di record da mostrare
+  // State per il numero di record da mostrare
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
 
   const location = useLocation();
@@ -60,19 +60,23 @@ export default function EmployeeListPage() {
       });
   }, []);
 
-  // Ricarica degli employee quando cambia la location
+  // Quando la location cambia (cliccando "EMPLOYEE"), resetta tutti gli stati al loro valore iniziale
   useEffect(() => {
     setSearchText("");
     setAppliedFilter("");
+    setRowsPerPage(10);
+    setSearchField("firstName");
+    setSortColumn("firstName");
+    setSortOrder("asc");
     loadEmployees();
   }, [location.key, loadEmployees]);
 
-  // Funzione per gestire l'applicazione del filtro (premendo il pulsante o Enter)
+  // Applica il filtro: viene attivato al click del bottone o premendo Enter
   const applyFilter = () => {
     setAppliedFilter(searchText);
   };
 
-  // Funzione per filtrare e ordinare l'elenco
+  // Calcola la lista filtrata e ordinata
   const filteredList = useMemo(() => {
     let list = allEmployees;
     if (appliedFilter.trim() !== "") {
@@ -84,7 +88,6 @@ export default function EmployeeListPage() {
           case "lastName":
             return emp.lastName.toLowerCase().includes(searchLower);
           case "address": {
-            // Per address usiamo split per parole isolate
             const addressWords = emp.address.toLowerCase().split(/\W+/);
             return addressWords.includes(searchLower);
           }
@@ -97,7 +100,6 @@ export default function EmployeeListPage() {
         }
       });
     }
-    // Ordina il risultato filtrato
     return list.slice().sort((a, b) => {
       let valA = "";
       let valB = "";
@@ -134,7 +136,6 @@ export default function EmployeeListPage() {
   // Gestione del click sulle intestazioni per ordinare
   const handleSort = (column: string) => {
     if (sortColumn === column) {
-      // Se la colonna è già attiva, inverte la direzione
       setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
     } else {
       setSortColumn(column);
@@ -148,14 +149,7 @@ export default function EmployeeListPage() {
         Employees
       </Typography>
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          gap: "16px",
-          marginBottom: "20px",
-        }}
-      >
+      <div style={{ display: "flex", justifyContent: "center", gap: "16px", marginBottom: "20px" }}>
         <FormControl variant="outlined" sx={{ minWidth: 150 }}>
           <InputLabel id="search-field-label">Campo</InputLabel>
           <Select
@@ -289,6 +283,6 @@ const StyledTableHeadCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
     backgroundColor: theme.palette.primary.light,
     color: theme.palette.common.white,
-    whiteSpace: "nowrap", // Impedisce il wrapping del testo nelle intestazioni
+    whiteSpace: "nowrap",
   },
 }));
