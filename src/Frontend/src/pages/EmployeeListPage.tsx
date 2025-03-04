@@ -13,6 +13,7 @@ import {
     Button,
   } from "@mui/material";
   import { useEffect, useState } from "react";
+  import { useLocation } from "react-router-dom";
   
   interface EmployeeListQuery {
     id: number;
@@ -28,6 +29,7 @@ import {
     const [filteredList, setFilteredList] = useState<EmployeeListQuery[]>([]);
     const [searchText, setSearchText] = useState("");
     const [isFocused, setIsFocused] = useState(false);
+    const location = useLocation();
   
     const loadEmployees = () => {
       fetch("/api/employees/list")
@@ -42,9 +44,12 @@ import {
         });
     };
   
+    // Ogni volta che location.key cambia (cioè, anche se il percorso è lo stesso ma si clicca nuovamente su Employees),
+    // resettiamo il campo di ricerca e ricarichiamo tutti gli employee.
     useEffect(() => {
+      setSearchText("");
       loadEmployees();
-    }, []);
+    }, [location.key]);
   
     const applyFilter = () => {
       if (searchText.trim() === "") {
