@@ -204,15 +204,8 @@ export default function EmployeeListPage() {
           marginBottom: "20px",
         }}
       >
-        {/* Sezione centrale */}
-        <div
-          style={{
-            display: "flex",
-            gap: "16px",
-            justifyContent: "center",
-            flexGrow: 1,
-          }}
-        >
+        {/* Gruppo all'estrema sinistra */}
+        <div style={{ display: "flex", gap: "16px", justifyContent: "flex-start" }}>
           <FormControl variant="outlined" sx={{ minWidth: 150 }}>
             <InputLabel id="search-field-label">Field</InputLabel>
             <Select
