@@ -33,10 +33,10 @@ export default function EmployeeListPage() {
   const [filteredList, setFilteredList] = useState<EmployeeListQuery[]>([]);
   const [searchText, setSearchText] = useState("");
   const [isFocused, setIsFocused] = useState(false);
-  // Stato per il campo di ricerca selezionato: "name", "address", "email", "phone"
-  const [searchField, setSearchField] = useState("name");
+  // Ora i campi di ricerca sono: "firstName", "lastName", "address", "email", "phone"
+  const [searchField, setSearchField] = useState("firstName");
 
-  // Importa la location per poter rilevare la navigazione
+  // Utilizziamo useLocation per resettare il filtro se si clicca nuovamente sulla voce "Employees"
   const location = useLocation();
 
   const loadEmployees = () => {
@@ -52,8 +52,7 @@ export default function EmployeeListPage() {
       });
   };
 
-  // Ogni volta che la location cambia (ad esempio cliccando "Employees" nella navbar)
-  // resettare il campo di ricerca e ricaricare la lista completa
+  // Resetta il campo di ricerca e ricarica la lista completa quando la location cambia
   useEffect(() => {
     setSearchText("");
     loadEmployees();
@@ -66,11 +65,12 @@ export default function EmployeeListPage() {
       const searchLower = searchText.toLowerCase();
       const filtered = allEmployees.filter((emp) => {
         switch (searchField) {
-          case "name":
-            return (
-              `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(searchLower)
-            );
+          case "firstName":
+            return emp.firstName.toLowerCase().includes(searchLower);
+          case "lastName":
+            return emp.lastName.toLowerCase().includes(searchLower);
           case "address": {
+            // Usa split per ottenere parole isolate
             const addressWords = emp.address.toLowerCase().split(/\W+/);
             const searchTerm = searchText.trim().toLowerCase();
             return addressWords.includes(searchTerm);
@@ -103,7 +103,8 @@ export default function EmployeeListPage() {
             label="Campo"
             onChange={(e) => setSearchField(e.target.value)}
           >
-            <MenuItem value="name">Name</MenuItem>
+            <MenuItem value="firstName">First Name</MenuItem>
+            <MenuItem value="lastName">Last Name</MenuItem>
             <MenuItem value="address">Address</MenuItem>
             <MenuItem value="email">Email</MenuItem>
             <MenuItem value="phone">Phone</MenuItem>
@@ -133,7 +134,8 @@ export default function EmployeeListPage() {
         <Table sx={{ minWidth: 650 }} aria-label="employee table">
           <TableHead>
             <TableRow>
-              <StyledTableHeadCell>Name</StyledTableHeadCell>
+              <StyledTableHeadCell>First Name</StyledTableHeadCell>
+              <StyledTableHeadCell>Last Name</StyledTableHeadCell>
               <StyledTableHeadCell>Address</StyledTableHeadCell>
               <StyledTableHeadCell>Email</StyledTableHeadCell>
               <StyledTableHeadCell>Phone</StyledTableHeadCell>
@@ -142,7 +144,8 @@ export default function EmployeeListPage() {
           <TableBody>
             {filteredList.map((row) => (
               <TableRow key={row.id}>
-                <TableCell>{`${row.firstName} ${row.lastName}`}</TableCell>
+                <TableCell>{row.firstName}</TableCell>
+                <TableCell>{row.lastName}</TableCell>
                 <TableCell>{row.address}</TableCell>
                 <TableCell>{row.email}</TableCell>
                 <TableCell>{row.phone}</TableCell>
