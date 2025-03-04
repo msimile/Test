@@ -17,7 +17,7 @@ import {
   InputLabel,
   TableSortLabel,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 
 interface EmployeeListQuery {
@@ -31,7 +31,8 @@ interface EmployeeListQuery {
 
 export default function EmployeeListPage() {
   const [allEmployees, setAllEmployees] = useState<EmployeeListQuery[]>([]);
-  const [filteredList, setFilteredList] = useState<EmployeeListQuery[]>([]);
+  // Invece di filteredList, usiamo uno state per il filtro applicato
+  const [appliedFilter, setAppliedFilter] = useState("");
   const [searchText, setSearchText] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   // Stato per il campo di ricerca selezionato
@@ -43,32 +44,61 @@ export default function EmployeeListPage() {
 
   const location = useLocation();
 
-  const loadEmployees = () => {
+  // Funzione per caricare gli employee
+  const loadEmployees = useCallback(() => {
     fetch("/api/employees/list")
       .then((response) => response.json())
       .then((data) => {
         console.log("Tutti gli employee ricevuti:", data);
         const employees = data as EmployeeListQuery[];
         setAllEmployees(employees);
-        // Applichiamo subito l'ordinamento predefinito
-        setFilteredList(sortEmployees(employees));
       })
       .catch((error) => {
         console.error("Errore nel recupero degli employee:", error);
       });
-  };
+  }, []);
 
-  // Reset e ricarica della lista completa quando si naviga su "Employees"
+  // Ricarica degli employee quando cambia la location
   useEffect(() => {
     setSearchText("");
+    setAppliedFilter("");
     loadEmployees();
-  }, [location.key]);
+  }, [location.key, loadEmployees]);
 
-  // Funzione per ordinare un array in base a sortColumn e sortOrder
-  const sortEmployees = (employees: EmployeeListQuery[]): EmployeeListQuery[] => {
-    return employees.slice().sort((a, b) => {
-      let valA: string = "";
-      let valB: string = "";
+  // Funzione per gestire l'applicazione del filtro (premendo il pulsante o Enter)
+  const applyFilter = () => {
+    setAppliedFilter(searchText);
+  };
+
+  // Funzione per filtrare e ordinare l'elenco
+  const filteredList = useMemo(() => {
+    let list = allEmployees;
+    if (appliedFilter.trim() !== "") {
+      const searchLower = appliedFilter.toLowerCase();
+      list = allEmployees.filter((emp) => {
+        switch (searchField) {
+          case "firstName":
+            return emp.firstName.toLowerCase().includes(searchLower);
+          case "lastName":
+            return emp.lastName.toLowerCase().includes(searchLower);
+          case "address": {
+            // Per address usiamo split per parole isolate
+            const addressWords = emp.address.toLowerCase().split(/\W+/);
+            return addressWords.includes(searchLower);
+          }
+          case "email":
+            return emp.email.toLowerCase().includes(searchLower);
+          case "phone":
+            return emp.phone.toLowerCase().includes(searchLower);
+          default:
+            return false;
+        }
+      });
+    }
+    // Ordina il risultato filtrato
+    return list.slice().sort((a, b) => {
+      let valA = "";
+      let valB = "";
       switch (sortColumn) {
         case "firstName":
           valA = a.firstName.toLowerCase();
@@ -97,44 +127,7 @@ export default function EmployeeListPage() {
       if (valA > valB) return sortOrder === "asc" ? 1 : -1;
       return 0;
     });
-  };
-
-  // Applica il filtro e poi ordina i risultati
-  const applyFilter = () => {
-    let filtered: EmployeeListQuery[];
-    if (searchText.trim() === "") {
-      filtered = allEmployees;
-    } else {
-      const searchLower = searchText.toLowerCase();
-      filtered = allEmployees.filter((emp) => {
-        switch (searchField) {
-          case "firstName":
-            return emp.firstName.toLowerCase().includes(searchLower);
-          case "lastName":
-            return emp.lastName.toLowerCase().includes(searchLower);
-          case "address": {
-            // Per address usiamo split per parole isolate
-            const addressWords = emp.address.toLowerCase().split(/\W+/);
-            const searchTerm = searchText.trim().toLowerCase();
-            return addressWords.includes(searchTerm);
-          }
-          case "email":
-            return emp.email.toLowerCase().includes(searchLower);
-          case "phone":
-            return emp.phone.toLowerCase().includes(searchLower);
-          default:
-            return false;
-        }
-      });
-    }
-    // Ordina il risultato filtrato
-    setFilteredList(sortEmployees(filtered));
-  };
-
-  // Riordina la lista filtrata ogni volta che cambia lo stato dell'ordinamento
-  useEffect(() => {
-    setFilteredList((prev) => sortEmployees(prev));
-  }, [sortColumn, sortOrder]);
+  }, [allEmployees, appliedFilter, searchField, sortColumn, sortOrder]);
 
   // Funzione per gestire il click sulla testata di colonna
   const handleSort = (column: string) => {
