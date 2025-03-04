@@ -59,10 +59,12 @@ export default function EmployeeListPage() {
       const searchLower = searchText.toLowerCase();
       const filtered = allEmployees.filter((emp) => {
         switch (searchField) {
-          case "name":
-            return (
-              `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(searchLower)
-            );
+          case "name": {
+            // Usa una regex con word boundaries per cercare la parola intera
+            const fullName = `${emp.firstName} ${emp.lastName}`;
+            const regex = new RegExp(`\\b${searchText.trim()}\\b`, 'i');
+            return regex.test(fullName);
+          }
           case "address":
             return emp.address.toLowerCase().includes(searchLower);
           case "email":
@@ -102,7 +104,7 @@ export default function EmployeeListPage() {
 
         <TextField
           placeholder="Filtra per termine..."
-          label={isFocused || searchText ? "Cerca nel campo selezionato" : ""}
+          label={isFocused || searchText ? "Cerca in ogni campo" : ""}
           variant="outlined"
           value={searchText}
           onFocus={() => setIsFocused(true)}
