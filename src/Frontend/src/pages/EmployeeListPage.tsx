@@ -79,6 +79,11 @@ import {
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             onChange={(e) => setSearchText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                applyFilter();
+              }
+            }}
           />
           <Button
             variant="contained"
