@@ -31,7 +31,6 @@ interface EmployeeListQuery {
 
 export default function EmployeeListPage() {
   const [allEmployees, setAllEmployees] = useState<EmployeeListQuery[]>([]);
-  // Invece di filteredList, usiamo uno state per il filtro applicato
   const [appliedFilter, setAppliedFilter] = useState("");
   const [searchText, setSearchText] = useState("");
   const [isFocused, setIsFocused] = useState(false);
@@ -41,6 +40,9 @@ export default function EmployeeListPage() {
   // Stati per l'ordinamento
   const [sortColumn, setSortColumn] = useState("firstName");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  // Nuovo state per il numero di record da mostrare
+  const [rowsPerPage, setRowsPerPage] = useState<number>(10);
 
   const location = useLocation();
 
@@ -129,7 +131,7 @@ export default function EmployeeListPage() {
     });
   }, [allEmployees, appliedFilter, searchField, sortColumn, sortOrder]);
 
-  // Funzione per gestire il click sulla testata di colonna
+  // Gestione del click sulle intestazioni per ordinare
   const handleSort = (column: string) => {
     if (sortColumn === column) {
       // Se la colonna è già attiva, inverte la direzione
@@ -146,7 +148,14 @@ export default function EmployeeListPage() {
         Employees
       </Typography>
 
-      <div style={{ display: "flex", justifyContent: "center", gap: "16px", marginBottom: "20px" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          gap: "16px",
+          marginBottom: "20px",
+        }}
+      >
         <FormControl variant="outlined" sx={{ minWidth: 150 }}>
           <InputLabel id="search-field-label">Campo</InputLabel>
           <Select
@@ -181,10 +190,35 @@ export default function EmployeeListPage() {
         <Button variant="contained" color="primary" onClick={applyFilter}>
           Filtra
         </Button>
+
+        {/* Menù a tendina per selezionare il numero di record */}
+        <FormControl variant="outlined" sx={{ minWidth: 150 }}>
+          <InputLabel id="rows-per-page-label">Records</InputLabel>
+          <Select
+            labelId="rows-per-page-label"
+            id="rows-per-page"
+            value={rowsPerPage === Infinity ? "all" : rowsPerPage.toString()}
+            label="Records"
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === "all") {
+                setRowsPerPage(Infinity);
+              } else {
+                setRowsPerPage(parseInt(value));
+              }
+            }}
+          >
+            <MenuItem value="10">10</MenuItem>
+            <MenuItem value="20">20</MenuItem>
+            <MenuItem value="50">50</MenuItem>
+            <MenuItem value="100">100</MenuItem>
+            <MenuItem value="all">All</MenuItem>
+          </Select>
+        </FormControl>
       </div>
 
       <TableContainer component={Paper}>
-        <Table sx={{ minWidth: 650 }} aria-label="employee table">
+        <Table sx={{ minWidth: 650, tableLayout: "fixed" }} aria-label="employee table">
           <TableHead>
             <TableRow>
               <StyledTableHeadCell>
@@ -235,7 +269,7 @@ export default function EmployeeListPage() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredList.map((row) => (
+            {filteredList.slice(0, rowsPerPage).map((row) => (
               <TableRow key={row.id}>
                 <TableCell>{row.firstName}</TableCell>
                 <TableCell>{row.lastName}</TableCell>
@@ -255,5 +289,6 @@ const StyledTableHeadCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
     backgroundColor: theme.palette.primary.light,
     color: theme.palette.common.white,
+    whiteSpace: "nowrap", // Impedisce il wrapping del testo nelle intestazioni
   },
 }));
