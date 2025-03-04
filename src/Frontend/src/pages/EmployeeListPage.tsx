@@ -96,14 +96,13 @@ export default function EmployeeListPage() {
 
   // Funzione per esportare i dati visualizzati in formato XML
   const exportToXML = () => {
-    // Costruiamo la stringa XML utilizzando join per evitare caratteri indesiderati
     const exportData = filteredList.slice(0, rowsPerPage);
     const xmlContent = [
       '<?xml version="1.0" encoding="UTF-8"?>',
       "<employees>",
       ...exportData.map(
-        (emp) => 
-`  <employee>
+        (emp) =>
+          `  <employee>
     <id>${emp.id}</id>
     <firstName>${escapeXml(emp.firstName)}</firstName>
     <lastName>${escapeXml(emp.lastName)}</lastName>
@@ -200,74 +199,87 @@ export default function EmployeeListPage() {
       <div
         style={{
           display: "flex",
-          justifyContent: "center",
-          gap: "16px",
+          justifyContent: "space-between",
+          alignItems: "center",
           marginBottom: "20px",
         }}
       >
-        <FormControl variant="outlined" sx={{ minWidth: 150 }}>
-          <InputLabel id="search-field-label">Field</InputLabel>
-          <Select
-            labelId="search-field-label"
-            id="search-field"
-            value={searchField}
-            label="Field"
-            onChange={(e) => setSearchField(e.target.value)}
-          >
-            <MenuItem value="firstName">First Name</MenuItem>
-            <MenuItem value="lastName">Last Name</MenuItem>
-            <MenuItem value="address">Address</MenuItem>
-            <MenuItem value="email">Email</MenuItem>
-            <MenuItem value="phone">Phone</MenuItem>
-          </Select>
-        </FormControl>
-
-        <TextField
-          placeholder="Type in..."
-          label={
-            isFocused || searchText ? "Search in the selected field" : ""
-          }
-          variant="outlined"
-          value={searchText}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          onChange={(e) => setSearchText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              applyFilter();
-            }
+        {/* Sezione centrale */}
+        <div
+          style={{
+            display: "flex",
+            gap: "16px",
+            justifyContent: "center",
+            flexGrow: 1,
           }}
-        />
-        <Button variant="contained" color="primary" onClick={applyFilter}>
-          Filter
-        </Button>
-        <Button variant="contained" color="secondary" onClick={exportToXML}>
-          Export XML
-        </Button>
+        >
+          <FormControl variant="outlined" sx={{ minWidth: 150 }}>
+            <InputLabel id="search-field-label">Field</InputLabel>
+            <Select
+              labelId="search-field-label"
+              id="search-field"
+              value={searchField}
+              label="Field"
+              onChange={(e) => setSearchField(e.target.value)}
+            >
+              <MenuItem value="firstName">First Name</MenuItem>
+              <MenuItem value="lastName">Last Name</MenuItem>
+              <MenuItem value="address">Address</MenuItem>
+              <MenuItem value="email">Email</MenuItem>
+              <MenuItem value="phone">Phone</MenuItem>
+            </Select>
+          </FormControl>
 
-        <FormControl variant="outlined" sx={{ minWidth: 150 }}>
-          <InputLabel id="rows-per-page-label">Records</InputLabel>
-          <Select
-            labelId="rows-per-page-label"
-            id="rows-per-page"
-            value={rowsPerPage === Infinity ? "all" : rowsPerPage.toString()}
-            label="Records"
-            onChange={(e) => {
-              const value = e.target.value;
-              if (value === "all") {
-                setRowsPerPage(Infinity);
-              } else {
-                setRowsPerPage(parseInt(value));
+          <TextField
+            placeholder="Type in..."
+            label={
+              isFocused || searchText ? "Search in the selected field" : ""
+            }
+            variant="outlined"
+            value={searchText}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            onChange={(e) => setSearchText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                applyFilter();
               }
             }}
-          >
-            <MenuItem value="10">10</MenuItem>
-            <MenuItem value="20">20</MenuItem>
-            <MenuItem value="50">50</MenuItem>
-            <MenuItem value="100">100</MenuItem>
-            <MenuItem value="all">All</MenuItem>
-          </Select>
-        </FormControl>
+          />
+          <Button variant="contained" color="primary" onClick={applyFilter}>
+            Filter
+          </Button>
+          <Button variant="contained" color="secondary" onClick={exportToXML}>
+            Export XML
+          </Button>
+        </div>
+
+        {/* Dropdown Records a destra */}
+        <div>
+          <FormControl variant="outlined" sx={{ minWidth: 150 }}>
+            <InputLabel id="rows-per-page-label">Records</InputLabel>
+            <Select
+              labelId="rows-per-page-label"
+              id="rows-per-page"
+              value={rowsPerPage === Infinity ? "all" : rowsPerPage.toString()}
+              label="Records"
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value === "all") {
+                  setRowsPerPage(Infinity);
+                } else {
+                  setRowsPerPage(parseInt(value));
+                }
+              }}
+            >
+              <MenuItem value="10">10</MenuItem>
+              <MenuItem value="20">20</MenuItem>
+              <MenuItem value="50">50</MenuItem>
+              <MenuItem value="100">100</MenuItem>
+              <MenuItem value="all">All</MenuItem>
+            </Select>
+          </FormControl>
+        </div>
       </div>
 
       <TableContainer
