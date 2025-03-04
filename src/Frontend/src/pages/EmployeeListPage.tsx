@@ -17,6 +17,7 @@ import {
   InputLabel,
 } from "@mui/material";
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 interface EmployeeListQuery {
   id: number;
@@ -35,6 +36,9 @@ export default function EmployeeListPage() {
   // Stato per il campo di ricerca selezionato: "name", "address", "email", "phone"
   const [searchField, setSearchField] = useState("name");
 
+  // Importa la location per poter rilevare la navigazione
+  const location = useLocation();
+
   const loadEmployees = () => {
     fetch("/api/employees/list")
       .then((response) => response.json())
@@ -48,9 +52,12 @@ export default function EmployeeListPage() {
       });
   };
 
+  // Ogni volta che la location cambia (ad esempio cliccando "Employees" nella navbar)
+  // resettare il campo di ricerca e ricaricare la lista completa
   useEffect(() => {
+    setSearchText("");
     loadEmployees();
-  }, []);
+  }, [location.key]);
 
   const applyFilter = () => {
     if (searchText.trim() === "") {
@@ -59,14 +66,15 @@ export default function EmployeeListPage() {
       const searchLower = searchText.toLowerCase();
       const filtered = allEmployees.filter((emp) => {
         switch (searchField) {
-          case "name": {
-            // Usa una regex con word boundaries per cercare la parola intera
-            const fullName = `${emp.firstName} ${emp.lastName}`;
-            const regex = new RegExp(`\\b${searchText.trim()}\\b`, 'i');
-            return regex.test(fullName);
+          case "name":
+            return (
+              `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(searchLower)
+            );
+          case "address": {
+            const addressWords = emp.address.toLowerCase().split(/\W+/);
+            const searchTerm = searchText.trim().toLowerCase();
+            return addressWords.includes(searchTerm);
           }
-          case "address":
-            return emp.address.toLowerCase().includes(searchLower);
           case "email":
             return emp.email.toLowerCase().includes(searchLower);
           case "phone":
@@ -104,7 +112,7 @@ export default function EmployeeListPage() {
 
         <TextField
           placeholder="Filtra per termine..."
-          label={isFocused || searchText ? "Cerca in ogni campo" : ""}
+          label={isFocused || searchText ? "Cerca nel campo selezionato" : ""}
           variant="outlined"
           value={searchText}
           onFocus={() => setIsFocused(true)}
