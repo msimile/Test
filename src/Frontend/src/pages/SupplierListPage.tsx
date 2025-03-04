@@ -29,6 +29,7 @@ export default function SupplierListPage() {
         return response.json();
       })
       .then((data) => {
+        // console.log("Dati suppliers ricevuti:", data); - debug per verificare il nome dei campi
         setList(data as SupplierListQuery[]);
       });
   }, []);

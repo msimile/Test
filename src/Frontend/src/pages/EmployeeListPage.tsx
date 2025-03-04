@@ -12,10 +12,10 @@ import {
   } from "@mui/material";
   import { useEffect, useState } from "react";
   
-  
   interface EmployeeListQuery {
     id: number;
-    name: string;
+    firstName: string;
+    lastName: string;
     address: string;
     email: string;
     phone: string;
@@ -28,6 +28,7 @@ import {
       fetch("/api/employees/list")
         .then((response) => response.json())
         .then((data) => {
+          // console.log("Dati employee ricevuti:", data); - debug per verificare il nome dei campi
           setList(data as EmployeeListQuery[]);
         })
         .catch((error) => {
@@ -53,11 +54,12 @@ import {
             </TableHead>
             <TableBody>
               {list.map((row) => (
-                <TableRow
-                  key={row.id}
-                  sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-                >
-                  <TableCell>{row.name}</TableCell>
+                <TableRow key={row.id}>
+                  <TableCell>
+                    {row.firstName && row.lastName
+                      ? `${row.firstName} ${row.lastName}`
+                      : "N/A"}
+                  </TableCell>
                   <TableCell>{row.address}</TableCell>
                   <TableCell>{row.email}</TableCell>
                   <TableCell>{row.phone}</TableCell>
