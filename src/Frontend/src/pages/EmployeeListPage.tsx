@@ -15,6 +15,7 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  TableSortLabel,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
@@ -33,10 +34,13 @@ export default function EmployeeListPage() {
   const [filteredList, setFilteredList] = useState<EmployeeListQuery[]>([]);
   const [searchText, setSearchText] = useState("");
   const [isFocused, setIsFocused] = useState(false);
-  // Ora i campi di ricerca sono: "firstName", "lastName", "address", "email", "phone"
+  // Stato per il campo di ricerca selezionato
   const [searchField, setSearchField] = useState("firstName");
 
-  // Utilizziamo useLocation per resettare il filtro se si clicca nuovamente sulla voce "Employees"
+  // Stati per l'ordinamento
+  const [sortColumn, setSortColumn] = useState("firstName");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
   const location = useLocation();
 
   const loadEmployees = () => {
@@ -44,33 +48,72 @@ export default function EmployeeListPage() {
       .then((response) => response.json())
       .then((data) => {
         console.log("Tutti gli employee ricevuti:", data);
-        setAllEmployees(data as EmployeeListQuery[]);
-        setFilteredList(data as EmployeeListQuery[]);
+        const employees = data as EmployeeListQuery[];
+        setAllEmployees(employees);
+        // Applichiamo subito l'ordinamento predefinito
+        setFilteredList(sortEmployees(employees));
       })
       .catch((error) => {
         console.error("Errore nel recupero degli employee:", error);
       });
   };
 
-  // Resetta il campo di ricerca e ricarica la lista completa quando la location cambia
+  // Reset e ricarica della lista completa quando si naviga su "Employees"
   useEffect(() => {
     setSearchText("");
     loadEmployees();
   }, [location.key]);
 
+  // Funzione per ordinare un array in base a sortColumn e sortOrder
+  const sortEmployees = (employees: EmployeeListQuery[]): EmployeeListQuery[] => {
+    return employees.slice().sort((a, b) => {
+      let valA: string = "";
+      let valB: string = "";
+      switch (sortColumn) {
+        case "firstName":
+          valA = a.firstName.toLowerCase();
+          valB = b.firstName.toLowerCase();
+          break;
+        case "lastName":
+          valA = a.lastName.toLowerCase();
+          valB = b.lastName.toLowerCase();
+          break;
+        case "address":
+          valA = a.address.toLowerCase();
+          valB = b.address.toLowerCase();
+          break;
+        case "email":
+          valA = a.email.toLowerCase();
+          valB = b.email.toLowerCase();
+          break;
+        case "phone":
+          valA = a.phone.toLowerCase();
+          valB = b.phone.toLowerCase();
+          break;
+        default:
+          break;
+      }
+      if (valA < valB) return sortOrder === "asc" ? -1 : 1;
+      if (valA > valB) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
+  };
+
+  // Applica il filtro e poi ordina i risultati
   const applyFilter = () => {
+    let filtered: EmployeeListQuery[];
     if (searchText.trim() === "") {
-      setFilteredList(allEmployees);
+      filtered = allEmployees;
     } else {
       const searchLower = searchText.toLowerCase();
-      const filtered = allEmployees.filter((emp) => {
+      filtered = allEmployees.filter((emp) => {
         switch (searchField) {
           case "firstName":
             return emp.firstName.toLowerCase().includes(searchLower);
           case "lastName":
             return emp.lastName.toLowerCase().includes(searchLower);
           case "address": {
-            // Usa split per ottenere parole isolate
+            // Per address usiamo split per parole isolate
             const addressWords = emp.address.toLowerCase().split(/\W+/);
             const searchTerm = searchText.trim().toLowerCase();
             return addressWords.includes(searchTerm);
@@ -83,7 +126,24 @@ export default function EmployeeListPage() {
             return false;
         }
       });
-      setFilteredList(filtered);
+    }
+    // Ordina il risultato filtrato
+    setFilteredList(sortEmployees(filtered));
+  };
+
+  // Riordina la lista filtrata ogni volta che cambia lo stato dell'ordinamento
+  useEffect(() => {
+    setFilteredList((prev) => sortEmployees(prev));
+  }, [sortColumn, sortOrder]);
+
+  // Funzione per gestire il click sulla testata di colonna
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      // Se la colonna è già attiva, inverte la direzione
+      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortColumn(column);
+      setSortOrder("asc");
     }
   };
 
@@ -134,11 +194,51 @@ export default function EmployeeListPage() {
         <Table sx={{ minWidth: 650 }} aria-label="employee table">
           <TableHead>
             <TableRow>
-              <StyledTableHeadCell>First Name</StyledTableHeadCell>
-              <StyledTableHeadCell>Last Name</StyledTableHeadCell>
-              <StyledTableHeadCell>Address</StyledTableHeadCell>
-              <StyledTableHeadCell>Email</StyledTableHeadCell>
-              <StyledTableHeadCell>Phone</StyledTableHeadCell>
+              <StyledTableHeadCell>
+                <TableSortLabel
+                  active={sortColumn === "firstName"}
+                  direction={sortColumn === "firstName" ? sortOrder : "asc"}
+                  onClick={() => handleSort("firstName")}
+                >
+                  First Name
+                </TableSortLabel>
+              </StyledTableHeadCell>
+              <StyledTableHeadCell>
+                <TableSortLabel
+                  active={sortColumn === "lastName"}
+                  direction={sortColumn === "lastName" ? sortOrder : "asc"}
+                  onClick={() => handleSort("lastName")}
+                >
+                  Last Name
+                </TableSortLabel>
+              </StyledTableHeadCell>
+              <StyledTableHeadCell>
+                <TableSortLabel
+                  active={sortColumn === "address"}
+                  direction={sortColumn === "address" ? sortOrder : "asc"}
+                  onClick={() => handleSort("address")}
+                >
+                  Address
+                </TableSortLabel>
+              </StyledTableHeadCell>
+              <StyledTableHeadCell>
+                <TableSortLabel
+                  active={sortColumn === "email"}
+                  direction={sortColumn === "email" ? sortOrder : "asc"}
+                  onClick={() => handleSort("email")}
+                >
+                  Email
+                </TableSortLabel>
+              </StyledTableHeadCell>
+              <StyledTableHeadCell>
+                <TableSortLabel
+                  active={sortColumn === "phone"}
+                  direction={sortColumn === "phone" ? sortOrder : "asc"}
+                  onClick={() => handleSort("phone")}
+                >
+                  Phone
+                </TableSortLabel>
+              </StyledTableHeadCell>
             </TableRow>
           </TableHead>
           <TableBody>
