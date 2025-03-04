@@ -9,6 +9,8 @@ import {
     Typography,
     styled,
     tableCellClasses,
+    TextField,
+    Button,
   } from "@mui/material";
   import { useEffect, useState } from "react";
   
@@ -22,25 +24,71 @@ import {
   }
   
   export default function EmployeeListPage() {
-    const [list, setList] = useState<EmployeeListQuery[]>([]);
+    // Stato per contenere tutti gli employee
+    const [allEmployees, setAllEmployees] = useState<EmployeeListQuery[]>([]);
+    // Stato per contenere gli employee filtrati
+    const [filteredList, setFilteredList] = useState<EmployeeListQuery[]>([]);
+    // Stato per il termine di ricerca
+    const [searchText, setSearchText] = useState("");
   
-    useEffect(() => {
+    // Carica tutti gli employee al montaggio del componente
+    const loadEmployees = () => {
       fetch("/api/employees/list")
         .then((response) => response.json())
         .then((data) => {
-          // console.log("Dati employee ricevuti:", data); - debug per verificare il nome dei campi
-          setList(data as EmployeeListQuery[]);
+          console.log("Tutti gli employee ricevuti:", data);
+          setAllEmployees(data as EmployeeListQuery[]);
+          setFilteredList(data as EmployeeListQuery[]);
         })
         .catch((error) => {
           console.error("Errore nel recupero degli employee:", error);
         });
+    };
+  
+    useEffect(() => {
+      loadEmployees();
     }, []);
+  
+    // Applica il filtro sui dati già caricati
+    const applyFilter = () => {
+      if (searchText.trim() === "") {
+        // Se il campo di ricerca è vuoto, mostra tutti i record
+        setFilteredList(allEmployees);
+      } else {
+        const searchLower = searchText.toLowerCase();
+        const filtered = allEmployees.filter((emp) =>
+          emp.firstName.toLowerCase().includes(searchLower) ||
+          emp.lastName.toLowerCase().includes(searchLower) ||
+          emp.address.toLowerCase().includes(searchLower) ||
+          emp.email.toLowerCase().includes(searchLower) ||
+          emp.phone.toLowerCase().includes(searchLower)
+        );
+        setFilteredList(filtered);
+      }
+    };
   
     return (
       <>
         <Typography variant="h4" sx={{ textAlign: "center", mt: 4, mb: 4 }}>
           Employees
         </Typography>
+  
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "20px" }}>
+          <TextField
+            label="Filtra per termine (cerca in ogni campo)"
+            variant="outlined"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={applyFilter}
+            sx={{ marginLeft: 2 }}
+          >
+            Filtra
+          </Button>
+        </div>
   
         <TableContainer component={Paper}>
           <Table sx={{ minWidth: 650 }} aria-label="employee table">
@@ -53,13 +101,9 @@ import {
               </TableRow>
             </TableHead>
             <TableBody>
-              {list.map((row) => (
+              {filteredList.map((row) => (
                 <TableRow key={row.id}>
-                  <TableCell>
-                    {row.firstName && row.lastName
-                      ? `${row.firstName} ${row.lastName}`
-                      : "N/A"}
-                  </TableCell>
+                  <TableCell>{`${row.firstName} ${row.lastName}`}</TableCell>
                   <TableCell>{row.address}</TableCell>
                   <TableCell>{row.email}</TableCell>
                   <TableCell>{row.phone}</TableCell>
