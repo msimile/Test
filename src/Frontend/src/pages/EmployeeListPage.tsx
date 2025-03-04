@@ -29,24 +29,44 @@ interface EmployeeListQuery {
   phone: string;
 }
 
+// Funzione per eseguire l'escape dei caratteri speciali in XML
+const escapeXml = (unsafe: string) => {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+};
+
+// Definiamo un componente Paper personalizzato con bordi arrotondati
+const StyledPaper = styled(Paper)(({ theme }) => ({
+  border: `1px solid ${theme.palette.divider}`,
+  borderBottom: `2px solid ${theme.palette.divider}`,
+  borderRadius: theme.shape.borderRadius,
+  marginBottom: theme.spacing(2),
+}));
+
+const StyledTableHeadCell = styled(TableCell)(({ theme }) => ({
+  [`&.${tableCellClasses.head}`]: {
+    backgroundColor: theme.palette.primary.light,
+    color: theme.palette.common.white,
+    whiteSpace: "nowrap",
+  },
+}));
+
 export default function EmployeeListPage() {
   const [allEmployees, setAllEmployees] = useState<EmployeeListQuery[]>([]);
   const [appliedFilter, setAppliedFilter] = useState("");
   const [searchText, setSearchText] = useState("");
   const [isFocused, setIsFocused] = useState(false);
-  // Stato per il campo di ricerca selezionato
   const [searchField, setSearchField] = useState("firstName");
-
-  // Stati per l'ordinamento
   const [sortColumn, setSortColumn] = useState("firstName");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-
-  // State per il numero di record da mostrare
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
 
   const location = useLocation();
 
-  // Funzione per caricare gli employee
   const loadEmployees = useCallback(() => {
     fetch("/api/employees/list")
       .then((response) => response.json())
@@ -60,7 +80,6 @@ export default function EmployeeListPage() {
       });
   }, []);
 
-  // Quando la location cambia (cliccando "EMPLOYEE"), resetta tutti gli stati al loro valore iniziale
   useEffect(() => {
     setSearchText("");
     setAppliedFilter("");
@@ -71,12 +90,42 @@ export default function EmployeeListPage() {
     loadEmployees();
   }, [location.key, loadEmployees]);
 
-  // Applica il filtro: viene attivato al click del bottone o premendo Enter
   const applyFilter = () => {
     setAppliedFilter(searchText);
   };
 
-  // Calcola la lista filtrata e ordinata
+  // Funzione per esportare i dati visualizzati in formato XML
+  const exportToXML = () => {
+    // Costruiamo la stringa XML utilizzando join per evitare caratteri indesiderati
+    const exportData = filteredList.slice(0, rowsPerPage);
+    const xmlContent = [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      "<employees>",
+      ...exportData.map(
+        (emp) => 
+`  <employee>
+    <id>${emp.id}</id>
+    <firstName>${escapeXml(emp.firstName)}</firstName>
+    <lastName>${escapeXml(emp.lastName)}</lastName>
+    <address>${escapeXml(emp.address)}</address>
+    <email>${escapeXml(emp.email)}</email>
+    <phone>${escapeXml(emp.phone)}</phone>
+  </employee>`
+      ),
+      "</employees>",
+    ].join("\n");
+
+    const blob = new Blob([xmlContent], { type: "application/xml" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "employees.xml";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
+
   const filteredList = useMemo(() => {
     let list = allEmployees;
     if (appliedFilter.trim() !== "") {
@@ -133,7 +182,6 @@ export default function EmployeeListPage() {
     });
   }, [allEmployees, appliedFilter, searchField, sortColumn, sortOrder]);
 
-  // Gestione del click sulle intestazioni per ordinare
   const handleSort = (column: string) => {
     if (sortColumn === column) {
       setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -149,14 +197,21 @@ export default function EmployeeListPage() {
         Employees
       </Typography>
 
-      <div style={{ display: "flex", justifyContent: "center", gap: "16px", marginBottom: "20px" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          gap: "16px",
+          marginBottom: "20px",
+        }}
+      >
         <FormControl variant="outlined" sx={{ minWidth: 150 }}>
-          <InputLabel id="search-field-label">Campo</InputLabel>
+          <InputLabel id="search-field-label">Field</InputLabel>
           <Select
             labelId="search-field-label"
             id="search-field"
             value={searchField}
-            label="Campo"
+            label="Field"
             onChange={(e) => setSearchField(e.target.value)}
           >
             <MenuItem value="firstName">First Name</MenuItem>
@@ -168,8 +223,10 @@ export default function EmployeeListPage() {
         </FormControl>
 
         <TextField
-          placeholder="Filtra per termine..."
-          label={isFocused || searchText ? "Cerca nel campo selezionato" : ""}
+          placeholder="Type in..."
+          label={
+            isFocused || searchText ? "Search in the selected field" : ""
+          }
           variant="outlined"
           value={searchText}
           onFocus={() => setIsFocused(true)}
@@ -182,10 +239,12 @@ export default function EmployeeListPage() {
           }}
         />
         <Button variant="contained" color="primary" onClick={applyFilter}>
-          Filtra
+          Filter
+        </Button>
+        <Button variant="contained" color="secondary" onClick={exportToXML}>
+          Export XML
         </Button>
 
-        {/* Menù a tendina per selezionare il numero di record */}
         <FormControl variant="outlined" sx={{ minWidth: 150 }}>
           <InputLabel id="rows-per-page-label">Records</InputLabel>
           <Select
@@ -211,8 +270,15 @@ export default function EmployeeListPage() {
         </FormControl>
       </div>
 
-      <TableContainer component={Paper}>
-        <Table sx={{ minWidth: 650, tableLayout: "fixed" }} aria-label="employee table">
+      <TableContainer
+        component={StyledPaper}
+        sx={{ tableLayout: "fixed" }}
+        aria-label="employee table"
+      >
+        <Table
+          sx={{ minWidth: 650, tableLayout: "fixed" }}
+          aria-label="employee table"
+        >
           <TableHead>
             <TableRow>
               <StyledTableHeadCell>
@@ -278,11 +344,3 @@ export default function EmployeeListPage() {
     </>
   );
 }
-
-const StyledTableHeadCell = styled(TableCell)(({ theme }) => ({
-  [`&.${tableCellClasses.head}`]: {
-    backgroundColor: theme.palette.primary.light,
-    color: theme.palette.common.white,
-    whiteSpace: "nowrap",
-  },
-}));
