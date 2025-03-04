@@ -24,14 +24,11 @@ import {
   }
   
   export default function EmployeeListPage() {
-    // Stato per contenere tutti gli employee
     const [allEmployees, setAllEmployees] = useState<EmployeeListQuery[]>([]);
-    // Stato per contenere gli employee filtrati
     const [filteredList, setFilteredList] = useState<EmployeeListQuery[]>([]);
-    // Stato per il termine di ricerca
     const [searchText, setSearchText] = useState("");
+    const [isFocused, setIsFocused] = useState(false);
   
-    // Carica tutti gli employee al montaggio del componente
     const loadEmployees = () => {
       fetch("/api/employees/list")
         .then((response) => response.json())
@@ -49,20 +46,20 @@ import {
       loadEmployees();
     }, []);
   
-    // Applica il filtro sui dati già caricati
     const applyFilter = () => {
       if (searchText.trim() === "") {
-        // Se il campo di ricerca è vuoto, mostra tutti i record
         setFilteredList(allEmployees);
       } else {
         const searchLower = searchText.toLowerCase();
-        const filtered = allEmployees.filter((emp) =>
-          emp.firstName.toLowerCase().includes(searchLower) ||
-          emp.lastName.toLowerCase().includes(searchLower) ||
-          emp.address.toLowerCase().includes(searchLower) ||
-          emp.email.toLowerCase().includes(searchLower) ||
-          emp.phone.toLowerCase().includes(searchLower)
-        );
+        const filtered = allEmployees.filter((emp) => {
+          const fullName = `${emp.firstName} ${emp.lastName}`.toLowerCase();
+          return (
+            fullName.includes(searchLower) ||
+            emp.address.toLowerCase().includes(searchLower) ||
+            emp.email.toLowerCase().includes(searchLower) ||
+            emp.phone.toLowerCase().includes(searchLower)
+          );
+        });
         setFilteredList(filtered);
       }
     };
@@ -75,9 +72,12 @@ import {
   
         <div style={{ display: "flex", justifyContent: "center", marginBottom: "20px" }}>
           <TextField
-            label="Filtra per termine (cerca in ogni campo)"
+            placeholder="Filtra per termine..."
+            label={isFocused || searchText ? "Cerca in ogni campo" : ""}
             variant="outlined"
             value={searchText}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
             onChange={(e) => setSearchText(e.target.value)}
           />
           <Button
