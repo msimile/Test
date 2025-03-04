@@ -1,135 +1,153 @@
 import {
-    Paper,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Typography,
-    styled,
-    tableCellClasses,
-    TextField,
-    Button,
-  } from "@mui/material";
-  import { useEffect, useState } from "react";
-  import { useLocation } from "react-router-dom";
-  
-  interface EmployeeListQuery {
-    id: number;
-    firstName: string;
-    lastName: string;
-    address: string;
-    email: string;
-    phone: string;
-  }
-  
-  export default function EmployeeListPage() {
-    const [allEmployees, setAllEmployees] = useState<EmployeeListQuery[]>([]);
-    const [filteredList, setFilteredList] = useState<EmployeeListQuery[]>([]);
-    const [searchText, setSearchText] = useState("");
-    const [isFocused, setIsFocused] = useState(false);
-    const location = useLocation();
-  
-    const loadEmployees = () => {
-      fetch("/api/employees/list")
-        .then((response) => response.json())
-        .then((data) => {
-          console.log("Tutti gli employee ricevuti:", data);
-          setAllEmployees(data as EmployeeListQuery[]);
-          setFilteredList(data as EmployeeListQuery[]);
-        })
-        .catch((error) => {
-          console.error("Errore nel recupero degli employee:", error);
-        });
-    };
-  
-    // Ogni volta che location.key cambia (cioè, anche se il percorso è lo stesso ma si clicca nuovamente su Employees),
-    // resettiamo il campo di ricerca e ricarichiamo tutti gli employee.
-    useEffect(() => {
-      setSearchText("");
-      loadEmployees();
-    }, [location.key]);
-  
-    const applyFilter = () => {
-      if (searchText.trim() === "") {
-        setFilteredList(allEmployees);
-      } else {
-        const searchLower = searchText.toLowerCase();
-        const filtered = allEmployees.filter((emp) => {
-          const fullName = `${emp.firstName} ${emp.lastName}`.toLowerCase();
-          return (
-            fullName.includes(searchLower) ||
-            emp.address.toLowerCase().includes(searchLower) ||
-            emp.email.toLowerCase().includes(searchLower) ||
-            emp.phone.toLowerCase().includes(searchLower)
-          );
-        });
-        setFilteredList(filtered);
-      }
-    };
-  
-    return (
-      <>
-        <Typography variant="h4" sx={{ textAlign: "center", mt: 4, mb: 4 }}>
-          Employees
-        </Typography>
-  
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: "20px" }}>
-          <TextField
-            placeholder="Filtra per termine..."
-            label={isFocused || searchText ? "Cerca in ogni campo" : ""}
-            variant="outlined"
-            value={searchText}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            onChange={(e) => setSearchText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                applyFilter();
-              }
-            }}
-          />
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={applyFilter}
-            sx={{ marginLeft: 2 }}
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography,
+  styled,
+  tableCellClasses,
+  TextField,
+  Button,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+} from "@mui/material";
+import { useEffect, useState } from "react";
+
+interface EmployeeListQuery {
+  id: number;
+  firstName: string;
+  lastName: string;
+  address: string;
+  email: string;
+  phone: string;
+}
+
+export default function EmployeeListPage() {
+  const [allEmployees, setAllEmployees] = useState<EmployeeListQuery[]>([]);
+  const [filteredList, setFilteredList] = useState<EmployeeListQuery[]>([]);
+  const [searchText, setSearchText] = useState("");
+  const [isFocused, setIsFocused] = useState(false);
+  // Stato per il campo di ricerca selezionato: "name", "address", "email", "phone"
+  const [searchField, setSearchField] = useState("name");
+
+  const loadEmployees = () => {
+    fetch("/api/employees/list")
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Tutti gli employee ricevuti:", data);
+        setAllEmployees(data as EmployeeListQuery[]);
+        setFilteredList(data as EmployeeListQuery[]);
+      })
+      .catch((error) => {
+        console.error("Errore nel recupero degli employee:", error);
+      });
+  };
+
+  useEffect(() => {
+    loadEmployees();
+  }, []);
+
+  const applyFilter = () => {
+    if (searchText.trim() === "") {
+      setFilteredList(allEmployees);
+    } else {
+      const searchLower = searchText.toLowerCase();
+      const filtered = allEmployees.filter((emp) => {
+        switch (searchField) {
+          case "name":
+            return (
+              `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(searchLower)
+            );
+          case "address":
+            return emp.address.toLowerCase().includes(searchLower);
+          case "email":
+            return emp.email.toLowerCase().includes(searchLower);
+          case "phone":
+            return emp.phone.toLowerCase().includes(searchLower);
+          default:
+            return false;
+        }
+      });
+      setFilteredList(filtered);
+    }
+  };
+
+  return (
+    <>
+      <Typography variant="h4" sx={{ textAlign: "center", mt: 4, mb: 4 }}>
+        Employees
+      </Typography>
+
+      <div style={{ display: "flex", justifyContent: "center", gap: "16px", marginBottom: "20px" }}>
+        <FormControl variant="outlined" sx={{ minWidth: 150 }}>
+          <InputLabel id="search-field-label">Campo</InputLabel>
+          <Select
+            labelId="search-field-label"
+            id="search-field"
+            value={searchField}
+            label="Campo"
+            onChange={(e) => setSearchField(e.target.value)}
           >
-            Filtra
-          </Button>
-        </div>
-  
-        <TableContainer component={Paper}>
-          <Table sx={{ minWidth: 650 }} aria-label="employee table">
-            <TableHead>
-              <TableRow>
-                <StyledTableHeadCell>Name</StyledTableHeadCell>
-                <StyledTableHeadCell>Address</StyledTableHeadCell>
-                <StyledTableHeadCell>Email</StyledTableHeadCell>
-                <StyledTableHeadCell>Phone</StyledTableHeadCell>
+            <MenuItem value="name">Name</MenuItem>
+            <MenuItem value="address">Address</MenuItem>
+            <MenuItem value="email">Email</MenuItem>
+            <MenuItem value="phone">Phone</MenuItem>
+          </Select>
+        </FormControl>
+
+        <TextField
+          placeholder="Filtra per termine..."
+          label={isFocused || searchText ? "Cerca nel campo selezionato" : ""}
+          variant="outlined"
+          value={searchText}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          onChange={(e) => setSearchText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              applyFilter();
+            }
+          }}
+        />
+        <Button variant="contained" color="primary" onClick={applyFilter}>
+          Filtra
+        </Button>
+      </div>
+
+      <TableContainer component={Paper}>
+        <Table sx={{ minWidth: 650 }} aria-label="employee table">
+          <TableHead>
+            <TableRow>
+              <StyledTableHeadCell>Name</StyledTableHeadCell>
+              <StyledTableHeadCell>Address</StyledTableHeadCell>
+              <StyledTableHeadCell>Email</StyledTableHeadCell>
+              <StyledTableHeadCell>Phone</StyledTableHeadCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filteredList.map((row) => (
+              <TableRow key={row.id}>
+                <TableCell>{`${row.firstName} ${row.lastName}`}</TableCell>
+                <TableCell>{row.address}</TableCell>
+                <TableCell>{row.email}</TableCell>
+                <TableCell>{row.phone}</TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredList.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell>{`${row.firstName} ${row.lastName}`}</TableCell>
-                  <TableCell>{row.address}</TableCell>
-                  <TableCell>{row.email}</TableCell>
-                  <TableCell>{row.phone}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </>
-    );
-  }
-  
-  const StyledTableHeadCell = styled(TableCell)(({ theme }) => ({
-    [`&.${tableCellClasses.head}`]: {
-      backgroundColor: theme.palette.primary.light,
-      color: theme.palette.common.white,
-    },
-  }));
-  
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </>
+  );
+}
+
+const StyledTableHeadCell = styled(TableCell)(({ theme }) => ({
+  [`&.${tableCellClasses.head}`]: {
+    backgroundColor: theme.palette.primary.light,
+    color: theme.palette.common.white,
+  },
+}));
