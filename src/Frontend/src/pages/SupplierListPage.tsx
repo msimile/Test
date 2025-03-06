@@ -31,7 +31,16 @@ export default function SupplierListPage() {
 
   return (
     <>
-      <Typography variant="h2" sx={{ textAlign: "center", mt: 4, mb: 4 }}>
+      <Typography variant="h2" sx={{
+    textAlign: "center",
+    mt: 4,
+    mb: 4,
+    userSelect: "text",
+    "&::selection": {
+      background: "#fbbd23",
+      color: "white",
+    },
+  }}>
         Suppliers
       </Typography>
 

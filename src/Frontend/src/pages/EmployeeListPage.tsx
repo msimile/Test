@@ -16,6 +16,8 @@ import {
   FormControl,
   InputLabel,
   TableSortLabel,
+  Box,
+  useMediaQuery,
 } from "@mui/material";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useLocation } from "react-router-dom";
@@ -62,6 +64,10 @@ const StyledTableHeadCell = styled(TableCell)<HeaderCellProps>(
 
 const StyledTableBodyCell = styled(TableCell)(() => ({
   textAlign: "center",
+  wordBreak: "break-word",
+  whiteSpace: "normal",
+  maxWidth: "200px",
+  overflowWrap: "break-word",
 }));
 
 const RedFormControl = styled(FormControl)(() => ({
@@ -80,17 +86,14 @@ export default function EmployeeListPage() {
   const [appliedFilter, setAppliedFilter] = useState("");
   const [searchText, setSearchText] = useState("");
   const [isFocused, setIsFocused] = useState(false);
-  // Campo sul quale effettuare il filtro
   const [searchField, setSearchField] = useState("firstName");
-  // Colonna attualmente usata per l'ordinamento (cliccata dall'utente)
   const [sortColumn, setSortColumn] = useState("firstName");
-  // Ordine di ordinamento: "asc" o "desc"
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
-  // Stato per memorizzare il sottoinsieme "fisso" di record
   const [fixedSubset, setFixedSubset] = useState<EmployeeListQuery[]>([]);
 
   const location = useLocation();
+  const isMobile = useMediaQuery("(max-width:890px)");
 
   const loadEmployees = useCallback(() => {
     fetch("/api/employees/list")
@@ -106,7 +109,6 @@ export default function EmployeeListPage() {
   }, []);
 
   useEffect(() => {
-    // Reset di vari stati ad ogni cambio di location
     setSearchText("");
     setAppliedFilter("");
     setRowsPerPage(10);
@@ -120,9 +122,6 @@ export default function EmployeeListPage() {
     setAppliedFilter(searchText);
   };
 
-  // Effettua il filtro in base a searchField e appliedFilter.
-  // Poi ordina la lista risultante in ordine ascendente in base alla colonna attiva (sortColumn)
-  // e fissa il sottoinsieme prendendo solo i primi "rowsPerPage" record.
   useEffect(() => {
     let list = allEmployees;
     if (appliedFilter.trim() !== "") {
@@ -146,7 +145,6 @@ export default function EmployeeListPage() {
         }
       });
     }
-    // Ordina in base al campo selezionato da sortColumn in ordine ascendente (baseline)
     const sortedBase = list.slice().sort((a, b) => {
       let fieldA = "";
       let fieldB = "";
@@ -176,12 +174,9 @@ export default function EmployeeListPage() {
       }
       return fieldA.localeCompare(fieldB);
     });
-    // Fissa il sottoinsieme: i primi "rowsPerPage" record dalla lista ordinata
     setFixedSubset(sortedBase.slice(0, rowsPerPage));
   }, [allEmployees, appliedFilter, searchField, rowsPerPage, sortColumn]);
 
-  // Applica l'ordinamento scelto (asc/desc) sul sottoinsieme fisso.
-  // Questo permette di invertire l'ordine interno dei record senza cambiare il gruppo fisso selezionato.
   const sortedSubset = useMemo(() => {
     return fixedSubset.slice().sort((a, b) => {
       let valA = "";
@@ -248,79 +243,222 @@ export default function EmployeeListPage() {
 
   const handleSort = (column: string) => {
     if (sortColumn === column) {
-      // Se si clicca due volte sulla stessa colonna, inverte l'ordine
       setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
     } else {
-      // Se si clicca su un'altra colonna, la fixedSubset verrà ricostruita (con base ordinata ascendente) 
-      // e l'ordinamento parte da "asc"
       setSortColumn(column);
       setSortOrder("asc");
     }
   };
 
+  // Stile fisso per i bottoni
+  const fixedButtonStyle = { minWidth: "120px", height: "55px" };
+
+  // Funzione helper per il rendering dell'email
+  const renderEmail = (email: string) => {
+    if (!email.includes("@")) return email;
+    const [username, domain] = email.split("@");
+    return (
+      <>
+        {username}
+        <br />@{domain}
+      </>
+    );
+  };
+
   return (
     <>
-      <Typography variant="h2" sx={{ textAlign: "center", mt: 4, mb: 4 }}>
+      <Typography
+        variant="h2"
+        sx={{
+          textAlign: "center",
+          mt: 4,
+          mb: 4,
+          userSelect: "text",
+          "&::selection": {
+            background: "#26cf7a",
+            color: "white",
+          },
+        }}
+      >
         Employees
       </Typography>
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "20px",
-        }}
-      >
-        <div style={{ display: "flex", gap: "16px", justifyContent: "flex-start" }}>
-          <FormControl variant="outlined" sx={{ minWidth: 150 }}>
-            <InputLabel id="search-field-label">Field</InputLabel>
-            <Select
-              labelId="search-field-label"
-              id="search-field"
-              value={searchField}
-              label="Field"
-              onChange={(e) => setSearchField(e.target.value)}
-            >
-              <MenuItem value="firstName">First Name</MenuItem>
-              <MenuItem value="lastName">Last Name</MenuItem>
-              <MenuItem value="address">Address</MenuItem>
-              <MenuItem value="email">Email</MenuItem>
-              <MenuItem value="phone">Phone</MenuItem>
-            </Select>
-          </FormControl>
-
-          <TextField
-            placeholder="Type in..."
-            label={isFocused || searchText ? "Search in the selected field" : ""}
-            variant="outlined"
-            value={searchText}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            onChange={(e) => setSearchText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                applyFilter();
-              }
-            }}
+      {isMobile ? (
+        <>
+          {/* Prima riga: Field, Search Bar e Filter */}
+          <Box
             sx={{
-              "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#20b96e",
-              },
-              "& .MuiInputLabel-root.Mui-focused": {
-                color: "#20b96e",
-              },
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              mb: 2,
+              gap: 2,
             }}
-          />
-          <Button variant="contained" color="primary" onClick={applyFilter}>
-            Filter
-          </Button>
-          <Button variant="contained" color="secondary" onClick={exportToXML}>
-            Export XML
-          </Button>
-        </div>
+          >
+            <FormControl variant="outlined" sx={{ minWidth: 150 }}>
+              <InputLabel id="search-field-label">Field</InputLabel>
+              <Select
+                labelId="search-field-label"
+                id="search-field"
+                value={searchField}
+                label="Field"
+                onChange={(e) => setSearchField(e.target.value)}
+              >
+                <MenuItem value="firstName">First Name</MenuItem>
+                <MenuItem value="lastName">Last Name</MenuItem>
+                <MenuItem value="address">Address</MenuItem>
+                <MenuItem value="email">Email</MenuItem>
+                <MenuItem value="phone">Phone</MenuItem>
+              </Select>
+            </FormControl>
 
-        <div>
+            <TextField
+              placeholder="Type in..."
+              label={isFocused || searchText ? "Search in the selected field" : ""}
+              variant="outlined"
+              value={searchText}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              onChange={(e) => setSearchText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  applyFilter();
+                }
+              }}
+              sx={{
+                flexGrow: 1,
+                "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#20b96e",
+                },
+                "& .MuiInputLabel-root.Mui-focused": {
+                  color: "#20b96e",
+                },
+              }}
+            />
+
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={applyFilter}
+              sx={fixedButtonStyle}
+            >
+              Filter
+            </Button>
+          </Box>
+
+          {/* Seconda riga: Records a sinistra e Export XML a destra */}
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+            }}
+          >
+            <RedFormControl variant="outlined" sx={{ minWidth: 150 }}>
+              <InputLabel id="rows-per-page-label">Records</InputLabel>
+              <Select
+                labelId="rows-per-page-label"
+                id="rows-per-page"
+                value={rowsPerPage === Infinity ? "all" : rowsPerPage.toString()}
+                label="Records"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === "all") {
+                    setRowsPerPage(Infinity);
+                  } else {
+                    setRowsPerPage(parseInt(value));
+                  }
+                }}
+              >
+                <MenuItem value="10">10</MenuItem>
+                <MenuItem value="20">20</MenuItem>
+                <MenuItem value="50">50</MenuItem>
+                <MenuItem value="100">100</MenuItem>
+                <MenuItem value="all">All</MenuItem>
+              </Select>
+            </RedFormControl>
+
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={exportToXML}
+              sx={fixedButtonStyle}
+            >
+              Export XML
+            </Button>
+          </Box>
+        </>
+      ) : (
+        // Layout desktop: una singola riga per tutti gli elementi
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 2,
+          }}
+        >
+          <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+            <FormControl variant="outlined" sx={{ minWidth: 150 }}>
+              <InputLabel id="search-field-label">Field</InputLabel>
+              <Select
+                labelId="search-field-label"
+                id="search-field"
+                value={searchField}
+                label="Field"
+                onChange={(e) => setSearchField(e.target.value)}
+              >
+                <MenuItem value="firstName">First Name</MenuItem>
+                <MenuItem value="lastName">Last Name</MenuItem>
+                <MenuItem value="address">Address</MenuItem>
+                <MenuItem value="email">Email</MenuItem>
+                <MenuItem value="phone">Phone</MenuItem>
+              </Select>
+            </FormControl>
+
+            <TextField
+              placeholder="Type in..."
+              label={isFocused || searchText ? "Search in the selected field" : ""}
+              variant="outlined"
+              value={searchText}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              onChange={(e) => setSearchText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  applyFilter();
+                }
+              }}
+              sx={{
+                "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#20b96e",
+                },
+                "& .MuiInputLabel-root.Mui-focused": {
+                  color: "#20b96e",
+                },
+              }}
+            />
+
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={applyFilter}
+              sx={fixedButtonStyle}
+            >
+              Filter
+            </Button>
+
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={exportToXML}
+              sx={fixedButtonStyle}
+            >
+              Export XML
+            </Button>
+          </Box>
+
           <RedFormControl variant="outlined" sx={{ minWidth: 150 }}>
             <InputLabel id="rows-per-page-label">Records</InputLabel>
             <Select
@@ -344,8 +482,8 @@ export default function EmployeeListPage() {
               <MenuItem value="all">All</MenuItem>
             </Select>
           </RedFormControl>
-        </div>
-      </div>
+        </Box>
+      )}
 
       <TableContainer
         component={StyledPaper}
@@ -408,7 +546,7 @@ export default function EmployeeListPage() {
                 <StyledTableBodyCell>{row.firstName}</StyledTableBodyCell>
                 <StyledTableBodyCell>{row.lastName}</StyledTableBodyCell>
                 <StyledTableBodyCell>{row.address}</StyledTableBodyCell>
-                <StyledTableBodyCell>{row.email}</StyledTableBodyCell>
+                <StyledTableBodyCell>{renderEmail(row.email)}</StyledTableBodyCell>
                 <StyledTableBodyCell>{row.phone}</StyledTableBodyCell>
               </TableRow>
             ))}
