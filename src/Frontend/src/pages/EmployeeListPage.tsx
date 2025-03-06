@@ -81,6 +81,24 @@ const RedFormControl = styled(FormControl)(() => ({
   },
 }));
 
+// Mapping dei colori per ciascun campo del menù
+const headerColors: { [key: string]: string } = {
+  firstName: "#1976d2",
+  lastName: "#26cf7a",
+  address: "#fbbd23",
+  email: "#9c27b0",
+  phone: "#DA212F",
+};
+
+// Mapping per i nomi di visualizzazione
+const fieldDisplayNames: { [key: string]: string } = {
+  firstName: "First Name",
+  lastName: "Last Name",
+  address: "Address",
+  email: "Email",
+  phone: "Phone",
+};
+
 export default function EmployeeListPage() {
   const [allEmployees, setAllEmployees] = useState<EmployeeListQuery[]>([]);
   const [appliedFilter, setAppliedFilter] = useState("");
@@ -250,10 +268,15 @@ export default function EmployeeListPage() {
     }
   };
 
-  // Stile fisso per i bottoni
+  // Funzione helper per determinare lo stile del TableSortLabel - > intestazione più grande e in grassetto
+  const getHeaderLabelStyle = (column: string) => ({
+    fontSize: sortColumn === column ? "1.1rem" : "1rem",
+    fontWeight: sortColumn === column ? "bold" : "normal",
+  });
+
   const fixedButtonStyle = { minWidth: "120px", height: "55px" };
 
-  // Funzione helper per il rendering dell'email
+  // Funzione helper per il rendering dell'email -> testo va a capo dopo la @
   const renderEmail = (email: string) => {
     if (!email.includes("@")) return email;
     const [username, domain] = email.split("@");
@@ -304,17 +327,38 @@ export default function EmployeeListPage() {
                 label="Field"
                 onChange={(e) => setSearchField(e.target.value)}
               >
-                <MenuItem value="firstName">First Name</MenuItem>
-                <MenuItem value="lastName">Last Name</MenuItem>
-                <MenuItem value="address">Address</MenuItem>
-                <MenuItem value="email">Email</MenuItem>
-                <MenuItem value="phone">Phone</MenuItem>
+                {Object.entries(headerColors).map(([field, color]) => (
+                  <MenuItem
+                    key={field}
+                    value={field}
+                    disableRipple
+                    disableTouchRipple
+                    sx={{
+                      "&:hover": {
+                        backgroundColor: color,
+                        color: "white",
+                      },
+                      "&.Mui-selected": {
+                        backgroundColor: color,
+                        color: "white",
+                      },
+                      "&.Mui-selected:hover": {
+                        backgroundColor: color,
+                        color: "white",
+                      },
+                    }}
+                  >
+                    {fieldDisplayNames[field]}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
 
             <TextField
               placeholder="Type in..."
-              label={isFocused || searchText ? "Search in the selected field" : ""}
+              label={
+                isFocused || searchText ? "Search in the selected field" : ""
+              }
               variant="outlined"
               value={searchText}
               onFocus={() => setIsFocused(true)}
@@ -327,9 +371,10 @@ export default function EmployeeListPage() {
               }}
               sx={{
                 flexGrow: 1,
-                "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#20b96e",
-                },
+                "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
+                  {
+                    borderColor: "#20b96e",
+                  },
                 "& .MuiInputLabel-root.Mui-focused": {
                   color: "#20b96e",
                 },
@@ -409,17 +454,38 @@ export default function EmployeeListPage() {
                 label="Field"
                 onChange={(e) => setSearchField(e.target.value)}
               >
-                <MenuItem value="firstName">First Name</MenuItem>
-                <MenuItem value="lastName">Last Name</MenuItem>
-                <MenuItem value="address">Address</MenuItem>
-                <MenuItem value="email">Email</MenuItem>
-                <MenuItem value="phone">Phone</MenuItem>
+                {Object.entries(headerColors).map(([field, color]) => (
+                  <MenuItem
+                    key={field}
+                    value={field}
+                    disableRipple
+                    disableTouchRipple
+                    sx={{
+                      "&:hover": {
+                        backgroundColor: color,
+                        color: "white",
+                      },
+                      "&.Mui-selected": {
+                        backgroundColor: color,
+                        color: "white",
+                      },
+                      "&.Mui-selected:hover": {
+                        backgroundColor: color,
+                        color: "white",
+                      },
+                    }}
+                  >
+                    {fieldDisplayNames[field]}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
 
             <TextField
               placeholder="Type in..."
-              label={isFocused || searchText ? "Search in the selected field" : ""}
+              label={
+                isFocused || searchText ? "Search in the selected field" : ""
+              }
               variant="outlined"
               value={searchText}
               onFocus={() => setIsFocused(true)}
@@ -431,9 +497,10 @@ export default function EmployeeListPage() {
                 }
               }}
               sx={{
-                "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#20b96e",
-                },
+                "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
+                  {
+                    borderColor: "#20b96e",
+                  },
                 "& .MuiInputLabel-root.Mui-focused": {
                   color: "#20b96e",
                 },
@@ -498,6 +565,7 @@ export default function EmployeeListPage() {
                   active={sortColumn === "firstName"}
                   direction={sortColumn === "firstName" ? sortOrder : "asc"}
                   onClick={() => handleSort("firstName")}
+                  style={getHeaderLabelStyle("firstName")}
                 >
                   First Name
                 </TableSortLabel>
@@ -507,6 +575,7 @@ export default function EmployeeListPage() {
                   active={sortColumn === "lastName"}
                   direction={sortColumn === "lastName" ? sortOrder : "asc"}
                   onClick={() => handleSort("lastName")}
+                  style={getHeaderLabelStyle("lastName")}
                 >
                   Last Name
                 </TableSortLabel>
@@ -516,6 +585,7 @@ export default function EmployeeListPage() {
                   active={sortColumn === "address"}
                   direction={sortColumn === "address" ? sortOrder : "asc"}
                   onClick={() => handleSort("address")}
+                  style={getHeaderLabelStyle("address")}
                 >
                   Address
                 </TableSortLabel>
@@ -525,6 +595,7 @@ export default function EmployeeListPage() {
                   active={sortColumn === "email"}
                   direction={sortColumn === "email" ? sortOrder : "asc"}
                   onClick={() => handleSort("email")}
+                  style={getHeaderLabelStyle("email")}
                 >
                   Email
                 </TableSortLabel>
@@ -534,6 +605,7 @@ export default function EmployeeListPage() {
                   active={sortColumn === "phone"}
                   direction={sortColumn === "phone" ? sortOrder : "asc"}
                   onClick={() => handleSort("phone")}
+                  style={getHeaderLabelStyle("phone")}
                 >
                   Phone
                 </TableSortLabel>

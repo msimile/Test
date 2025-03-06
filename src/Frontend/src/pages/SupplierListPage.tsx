@@ -31,16 +31,19 @@ export default function SupplierListPage() {
 
   return (
     <>
-      <Typography variant="h2" sx={{
-    textAlign: "center",
-    mt: 4,
-    mb: 4,
-    userSelect: "text",
-    "&::selection": {
-      background: "#fbbd23",
-      color: "white",
-    },
-  }}>
+      <Typography
+        variant="h2"
+        sx={{
+          textAlign: "center",
+          mt: 4,
+          mb: 4,
+          userSelect: "text",
+          "&::selection": {
+            background: "#fbbd23",
+            color: "white",
+          },
+        }}
+      >
         Suppliers
       </Typography>
 
@@ -50,25 +53,25 @@ export default function SupplierListPage() {
             <TableRow>
               <TableCell
                 align="center"
-                sx={{ backgroundColor: "#1976d2", color: "white" }}
+                sx={{ backgroundColor: "#1976d2", color: "white", width: "200px" }}
               >
                 Name
               </TableCell>
               <TableCell
                 align="center"
-                sx={{ backgroundColor: "#26cf7a", color: "white" }}
+                sx={{ backgroundColor: "#26cf7a", color: "white", width: "250px" }}
               >
                 Address
               </TableCell>
               <TableCell
                 align="center"
-                sx={{ backgroundColor: "#fbbd23", color: "white" }}
+                sx={{ backgroundColor: "#fbbd23", color: "white", width: "250px" }}
               >
                 Email
               </TableCell>
               <TableCell
                 align="center"
-                sx={{ backgroundColor: "#9c27b0", color: "white" }}
+                sx={{ backgroundColor: "#9c27b0", color: "white", width: "200px" }}
               >
                 Phone
               </TableCell>
@@ -80,10 +83,10 @@ export default function SupplierListPage() {
                 key={row.id}
                 sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
               >
-                <TableCell align="center">{row.name}</TableCell>
-                <TableCell align="center">{row.address}</TableCell>
-                <TableCell align="center">{row.email}</TableCell>
-                <TableCell align="center">{row.phone}</TableCell>
+                <TableCell align="center" sx={{ width: "200px" }}>{row.name}</TableCell>
+                <TableCell align="center" sx={{ width: "250px" }}>{row.address}</TableCell>
+                <TableCell align="center" sx={{ width: "250px" }}>{row.email}</TableCell>
+                <TableCell align="center" sx={{ width: "200px" }}>{row.phone}</TableCell>
               </TableRow>
             ))}
           </TableBody>
