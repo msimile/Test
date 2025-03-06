@@ -16,7 +16,7 @@ export default function ShellHeader() {
   if (pathname.includes("/SupplierList")) {
     backgroundColor = "#fbbd23";
   } else if (pathname.includes("/CustomerList")) {
-    backgroundColor = "#9d1065";
+    backgroundColor = "#9c27b0";
   } else if (pathname.includes("/EmployeeList")) {
     backgroundColor = "#26cf7a";
   }
@@ -56,7 +56,7 @@ interface HeaderButtonProps extends ButtonProps {
 }
 
 function HeaderButton(props: HeaderButtonProps) {
-  const { to, ...other } = props;
+  const { to, children, ...other } = props;
   const location = useLocation();
   const isActive = location.pathname === to;
 
@@ -71,22 +71,27 @@ function HeaderButton(props: HeaderButtonProps) {
         color: isActive ? "black" : "white",
         fontSize: isActive ? "1.2rem" : "1rem",
         display: "block",
-        transition: "transform 0.3s ease",
+        transition: "transform 0.3s ease, font-size 0.3s ease",
         transformOrigin: "center",
-       "&:hover": {
+        
+        "&:hover": {
           transform: "scale(1.05)",
           backgroundColor: "transparent",
           boxShadow: "none",
-          color: "black"
+          color: "black",
         },
         "&:focus": { backgroundColor: "transparent", boxShadow: "none" },
         "&:active": { backgroundColor: "transparent", boxShadow: "none" },
       }}
-    />
+    >
+      <span style={{ position: "relative", top: "4px" }}>{children}</span>
+    </Button>
   );
 }
 
+
 function HeaderLinkButton(props: ButtonProps) {
+  const { children, ...other } = props;
   return (
     <Button
       disableRipple
@@ -94,20 +99,22 @@ function HeaderLinkButton(props: ButtonProps) {
       href="/swagger"
       target="_blank"
       rel="noopener noreferrer"
-      {...props}
+      {...other}
       sx={{
         my: 2,
         color: "white",
         fontSize: "1rem",
         display: "block",
-        transition:
-          "transform 0.3s ease",
+        transition: "transform 0.3s ease",
         "&:hover": {
           transform: "scale(1.05)",
-          color: "black"
+          color: "black",
         },
       }}
-    />
+    >
+      <span style={{ position: "relative", top: "4px" }}>{children}</span>
+    </Button>
   );
 }
+
 

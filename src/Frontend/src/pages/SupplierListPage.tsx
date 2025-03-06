@@ -7,8 +7,6 @@ import {
   TableHead,
   TableRow,
   Typography,
-  styled,
-  tableCellClasses,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 
@@ -25,18 +23,15 @@ export default function SupplierListPage() {
 
   useEffect(() => {
     fetch("/api/suppliers/list")
-      .then((response) => {
-        return response.json();
-      })
+      .then((response) => response.json())
       .then((data) => {
-        // console.log("Dati suppliers ricevuti:", data); - debug per verificare il nome dei campi
         setList(data as SupplierListQuery[]);
       });
   }, []);
 
   return (
     <>
-      <Typography variant="h4" sx={{ textAlign: "center", mt: 4, mb: 4 }}>
+      <Typography variant="h2" sx={{ textAlign: "center", mt: 4, mb: 4 }}>
         Suppliers
       </Typography>
 
@@ -44,10 +39,30 @@ export default function SupplierListPage() {
         <Table sx={{ minWidth: 650 }} aria-label="simple table">
           <TableHead>
             <TableRow>
-              <StyledTableHeadCell>Name</StyledTableHeadCell>
-              <StyledTableHeadCell>Address</StyledTableHeadCell>
-              <StyledTableHeadCell>Email</StyledTableHeadCell>
-              <StyledTableHeadCell>Phone</StyledTableHeadCell>
+              <TableCell
+                align="center"
+                sx={{ backgroundColor: "#1976d2", color: "white" }}
+              >
+                Name
+              </TableCell>
+              <TableCell
+                align="center"
+                sx={{ backgroundColor: "#26cf7a", color: "white" }}
+              >
+                Address
+              </TableCell>
+              <TableCell
+                align="center"
+                sx={{ backgroundColor: "#fbbd23", color: "white" }}
+              >
+                Email
+              </TableCell>
+              <TableCell
+                align="center"
+                sx={{ backgroundColor: "#9c27b0", color: "white" }}
+              >
+                Phone
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -56,10 +71,10 @@ export default function SupplierListPage() {
                 key={row.id}
                 sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
               >
-                <TableCell>{row.name}</TableCell>
-                <TableCell>{row.address}</TableCell>
-                <TableCell>{row.email}</TableCell>
-                <TableCell>{row.phone}</TableCell>
+                <TableCell align="center">{row.name}</TableCell>
+                <TableCell align="center">{row.address}</TableCell>
+                <TableCell align="center">{row.email}</TableCell>
+                <TableCell align="center">{row.phone}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -68,10 +83,3 @@ export default function SupplierListPage() {
     </>
   );
 }
-
-const StyledTableHeadCell = styled(TableCell)(({ theme }) => ({
-  [`&.${tableCellClasses.head}`]: {
-    backgroundColor: theme.palette.primary.light,
-    color: theme.palette.common.white,
-  },
-}));

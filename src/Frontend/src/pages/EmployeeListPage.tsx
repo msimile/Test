@@ -29,7 +29,6 @@ interface EmployeeListQuery {
   phone: string;
 }
 
-// Funzione per eseguire l'escape dei caratteri speciali in XML
 const escapeXml = (unsafe: string) => {
   return unsafe
     .replace(/&/g, "&amp;")
@@ -39,7 +38,6 @@ const escapeXml = (unsafe: string) => {
     .replace(/'/g, "&apos;");
 };
 
-// Definiamo un componente Paper personalizzato con bordi arrotondati
 const StyledPaper = styled(Paper)(({ theme }) => ({
   border: `1px solid ${theme.palette.divider}`,
   borderBottom: `2px solid ${theme.palette.divider}`,
@@ -47,11 +45,35 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   marginBottom: theme.spacing(2),
 }));
 
-const StyledTableHeadCell = styled(TableCell)(({ theme }) => ({
-  [`&.${tableCellClasses.head}`]: {
-    backgroundColor: theme.palette.primary.light,
-    color: theme.palette.common.white,
-    whiteSpace: "nowrap",
+
+interface HeaderCellProps {
+  fixedColor?: string;
+}
+
+const StyledTableHeadCell = styled(TableCell)<HeaderCellProps>(
+  ({ theme, fixedColor }) => ({
+    [`&.${tableCellClasses.head}`]: {
+      backgroundColor: fixedColor ? fixedColor : theme.palette.primary.light,
+      color: theme.palette.common.white,
+      whiteSpace: "nowrap",
+      textAlign: "center",
+    },
+  })
+);
+
+const StyledTableBodyCell = styled(TableCell)(() => ({
+  textAlign: "center",
+}));
+
+
+const RedFormControl = styled(FormControl)(() => ({
+  '& .MuiOutlinedInput-root': {
+    '&.Mui-focused fieldset': {
+      borderColor: 'red !important',
+    },
+  },
+  '& .MuiInputLabel-root.Mui-focused': {
+    color: 'red !important',
   },
 }));
 
@@ -94,7 +116,6 @@ export default function EmployeeListPage() {
     setAppliedFilter(searchText);
   };
 
-  // Funzione per esportare i dati visualizzati in formato XML
   const exportToXML = () => {
     const exportData = filteredList.slice(0, rowsPerPage);
     const xmlContent = [
@@ -192,7 +213,7 @@ export default function EmployeeListPage() {
 
   return (
     <>
-      <Typography variant="h4" sx={{ textAlign: "center", mt: 4, mb: 4 }}>
+      <Typography variant="h2" sx={{ textAlign: "center", mt: 4, mb: 4 }}>
         Employees
       </Typography>
 
@@ -204,7 +225,6 @@ export default function EmployeeListPage() {
           marginBottom: "20px",
         }}
       >
-        {/* Gruppo all'estrema sinistra */}
         <div style={{ display: "flex", gap: "16px", justifyContent: "flex-start" }}>
           <FormControl variant="outlined" sx={{ minWidth: 150 }}>
             <InputLabel id="search-field-label">Field</InputLabel>
@@ -225,9 +245,7 @@ export default function EmployeeListPage() {
 
           <TextField
             placeholder="Type in..."
-            label={
-              isFocused || searchText ? "Search in the selected field" : ""
-            }
+            label={isFocused || searchText ? "Search in the selected field" : ""}
             variant="outlined"
             value={searchText}
             onFocus={() => setIsFocused(true)}
@@ -238,6 +256,14 @@ export default function EmployeeListPage() {
                 applyFilter();
               }
             }}
+            sx={{
+              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#20b96e',
+              },
+              '& .MuiInputLabel-root.Mui-focused': {
+                color: '#20b96e',
+              },
+            }}
           />
           <Button variant="contained" color="primary" onClick={applyFilter}>
             Filter
@@ -247,9 +273,8 @@ export default function EmployeeListPage() {
           </Button>
         </div>
 
-        {/* Dropdown Records a destra */}
         <div>
-          <FormControl variant="outlined" sx={{ minWidth: 150 }}>
+          <RedFormControl variant="outlined" sx={{ minWidth: 150 }}>
             <InputLabel id="rows-per-page-label">Records</InputLabel>
             <Select
               labelId="rows-per-page-label"
@@ -271,7 +296,7 @@ export default function EmployeeListPage() {
               <MenuItem value="100">100</MenuItem>
               <MenuItem value="all">All</MenuItem>
             </Select>
-          </FormControl>
+          </RedFormControl>
         </div>
       </div>
 
@@ -280,13 +305,10 @@ export default function EmployeeListPage() {
         sx={{ tableLayout: "fixed" }}
         aria-label="employee table"
       >
-        <Table
-          sx={{ minWidth: 650, tableLayout: "fixed" }}
-          aria-label="employee table"
-        >
+        <Table sx={{ minWidth: 650, tableLayout: "fixed" }} aria-label="employee table">
           <TableHead>
             <TableRow>
-              <StyledTableHeadCell>
+              <StyledTableHeadCell fixedColor="#1976d2">
                 <TableSortLabel
                   active={sortColumn === "firstName"}
                   direction={sortColumn === "firstName" ? sortOrder : "asc"}
@@ -295,7 +317,7 @@ export default function EmployeeListPage() {
                   First Name
                 </TableSortLabel>
               </StyledTableHeadCell>
-              <StyledTableHeadCell>
+              <StyledTableHeadCell fixedColor="#26cf7a">
                 <TableSortLabel
                   active={sortColumn === "lastName"}
                   direction={sortColumn === "lastName" ? sortOrder : "asc"}
@@ -304,7 +326,7 @@ export default function EmployeeListPage() {
                   Last Name
                 </TableSortLabel>
               </StyledTableHeadCell>
-              <StyledTableHeadCell>
+              <StyledTableHeadCell fixedColor="#fbbd23">
                 <TableSortLabel
                   active={sortColumn === "address"}
                   direction={sortColumn === "address" ? sortOrder : "asc"}
@@ -313,7 +335,7 @@ export default function EmployeeListPage() {
                   Address
                 </TableSortLabel>
               </StyledTableHeadCell>
-              <StyledTableHeadCell>
+              <StyledTableHeadCell fixedColor="#9c27b0">
                 <TableSortLabel
                   active={sortColumn === "email"}
                   direction={sortColumn === "email" ? sortOrder : "asc"}
@@ -322,7 +344,7 @@ export default function EmployeeListPage() {
                   Email
                 </TableSortLabel>
               </StyledTableHeadCell>
-              <StyledTableHeadCell>
+              <StyledTableHeadCell fixedColor="#DA212F">
                 <TableSortLabel
                   active={sortColumn === "phone"}
                   direction={sortColumn === "phone" ? sortOrder : "asc"}
@@ -336,11 +358,11 @@ export default function EmployeeListPage() {
           <TableBody>
             {filteredList.slice(0, rowsPerPage).map((row) => (
               <TableRow key={row.id}>
-                <TableCell>{row.firstName}</TableCell>
-                <TableCell>{row.lastName}</TableCell>
-                <TableCell>{row.address}</TableCell>
-                <TableCell>{row.email}</TableCell>
-                <TableCell>{row.phone}</TableCell>
+                <StyledTableBodyCell>{row.firstName}</StyledTableBodyCell>
+                <StyledTableBodyCell>{row.lastName}</StyledTableBodyCell>
+                <StyledTableBodyCell>{row.address}</StyledTableBodyCell>
+                <StyledTableBodyCell>{row.email}</StyledTableBodyCell>
+                <StyledTableBodyCell>{row.phone}</StyledTableBodyCell>
               </TableRow>
             ))}
           </TableBody>
