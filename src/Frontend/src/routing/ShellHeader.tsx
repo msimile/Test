@@ -10,12 +10,13 @@ import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useMediaQuery } from "@mui/material";
 
+
 export default function ShellHeader() {
-  const location = useLocation();
-  const { pathname } = location;
-  const navigate = useNavigate();
-  const isMobile = useMediaQuery("(max-width:800px)");
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const location = useLocation(); 
+  const { pathname } = location;  
+  const navigate = useNavigate(); 
+  const isMobile = useMediaQuery("(max-width:800px)"); 
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null); // Stato per la gestione del menu a tendina in mobile
 
   // Imposta il colore di background in base al path corrente
   let backgroundColor = "#1976d2"; 
@@ -27,14 +28,17 @@ export default function ShellHeader() {
     backgroundColor = "#26cf7a";
   }
 
+  // Funzione per aprire il menu mobile: imposta l'elemento ancorato al click
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
 
+  // Funzione per chiudere il menu mobile: resetta l'elemento ancorato
   const handleMenuClose = () => {
     setAnchorEl(null);
   };
 
+  // Gestisce il click su un elemento del menu: naviga al percorso desiderato e chiude il menu
   const handleMenuClick = (path: string) => {
     navigate(path);
     handleMenuClose();
@@ -47,7 +51,8 @@ export default function ShellHeader() {
           <HomeButton />
           {isMobile ? (
             <>
-              <Box sx={{ flexGrow: 1 }} /> {/* Spacer per spingere l'icona a destra */}
+              <Box sx={{ flexGrow: 1 }} />
+              {/* IconButton che apre il menu mobile */}
               <IconButton 
                 disableRipple 
                 color="inherit" 
@@ -67,29 +72,34 @@ export default function ShellHeader() {
                   Menu
                 </Typography>
               </IconButton>
+              {/* Menu a tendina per la versione mobile */}
               <Menu
                 anchorEl={anchorEl}
                 open={Boolean(anchorEl)}
                 onClose={handleMenuClose}
               >
+                {/* MenuItem per navigare alla pagina Suppliers */}
                 <MenuItem 
                   onClick={() => handleMenuClick("/SupplierList")}
                   sx={{ "&:hover": { backgroundColor: "#fbbd23", color: "white" } }}
                 >
                   Suppliers
                 </MenuItem>
+                {/* MenuItem per navigare alla pagina Customers */}
                 <MenuItem 
                   onClick={() => handleMenuClick("/CustomerList")}
                   sx={{ "&:hover": { backgroundColor: "#9c27b0", color: "white" } }}
                 >
                   Customers
                 </MenuItem>
+                {/* MenuItem per navigare alla pagina Employees */}
                 <MenuItem 
                   onClick={() => handleMenuClick("/EmployeeList")}
                   sx={{ "&:hover": { backgroundColor: "#26cf7a", color: "white" } }}
                 >
                   Employees
                 </MenuItem>
+                {/* MenuItem per aprire Swagger UI in una nuova finestra */}
                 <MenuItem 
                   onClick={() => {
                     window.open("/swagger", "_blank");
@@ -102,6 +112,7 @@ export default function ShellHeader() {
               </Menu>
             </>
           ) : (
+            // Layout per desktop: visualizza i pulsanti di navigazione in linea
             <Box sx={{ flexGrow: 1, display: "flex" }}>
               <HeaderButton to="/SupplierList">Suppliers</HeaderButton>
               <HeaderButton to="/CustomerList">Customers</HeaderButton>
@@ -132,21 +143,22 @@ interface HeaderButtonProps extends ButtonProps {
   to: string;
 }
 
+// Componente HeaderButton che evidenzia lo stato attivo in base al percorso corrente
 function HeaderButton(props: HeaderButtonProps) {
   const { to, children, ...other } = props;
-  const location = useLocation();
-  const isActive = location.pathname === to;
+  const location = useLocation(); // Ottiene il percorso attuale
+  const isActive = location.pathname === to; // Determina se il pulsante corrisponde alla pagina corrente
 
   return (
     <Button
-      component={RouterLink}
+      component={RouterLink} 
       to={to}
       disableRipple
       {...other}
       sx={{
         my: 2,
-        color: isActive ? "black" : "white",
-        fontSize: isActive ? "1.2rem" : "1rem",
+        color: isActive ? "black" : "white", 
+        fontSize: isActive ? "1.2rem" : "1rem", 
         display: "block",
         transition: "transform 0.3s ease, font-size 0.3s ease",
         transformOrigin: "center",
@@ -160,17 +172,19 @@ function HeaderButton(props: HeaderButtonProps) {
         "&:active": { backgroundColor: "transparent", boxShadow: "none" },
       }}
     >
+      {/* Per centrare verticalmente il testo */}
       <span style={{ position: "relative", top: "4px" }}>{children}</span>
     </Button>
   );
 }
 
+// Componente HeaderLinkButton per link esterni (ad es. Swagger UI) che si aprono in una nuova finestra
 function HeaderLinkButton(props: ButtonProps) {
   const { children, ...other } = props;
   return (
     <Button
       disableRipple
-      component={"a" as React.ElementType}
+      component={"a" as React.ElementType} // Utilizza un tag "a" per link esterni
       href="/swagger"
       target="_blank"
       rel="noopener noreferrer"
@@ -187,6 +201,7 @@ function HeaderLinkButton(props: ButtonProps) {
         },
       }}
     >
+      {/* Per centrare verticalmente il testo */}
       <span style={{ position: "relative", top: "4px" }}>{children}</span>
     </Button>
   );

@@ -22,6 +22,7 @@ import {
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 
+// Definizione dell'interfaccia per i dati dei dipendenti
 interface EmployeeListQuery {
   id: number;
   firstName: string;
@@ -31,6 +32,7 @@ interface EmployeeListQuery {
   phone: string;
 }
 
+// Funzione helper per l'escape dei caratteri XML in una stringa
 const escapeXml = (unsafe: string) => {
   return unsafe
     .replace(/&/g, "&amp;")
@@ -40,6 +42,7 @@ const escapeXml = (unsafe: string) => {
     .replace(/'/g, "&apos;");
 };
 
+// Styled component per il Paper che racchiude la tabella
 const StyledPaper = styled(Paper)(({ theme }) => ({
   border: `1px solid ${theme.palette.divider}`,
   borderBottom: `2px solid ${theme.palette.divider}`,
@@ -47,10 +50,12 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   marginBottom: theme.spacing(2),
 }));
 
+// Props per le celle dell'intestazione con possibilità di impostare un colore fisso
 interface HeaderCellProps {
   fixedColor?: string;
 }
 
+// Styled component per le celle dell'intestazione della tabella
 const StyledTableHeadCell = styled(TableCell)<HeaderCellProps>(
   ({ theme, fixedColor }) => ({
     [`&.${tableCellClasses.head}`]: {
@@ -62,6 +67,7 @@ const StyledTableHeadCell = styled(TableCell)<HeaderCellProps>(
   })
 );
 
+// Styled component per le celle del corpo della tabella
 const StyledTableBodyCell = styled(TableCell)(() => ({
   textAlign: "center",
   wordBreak: "break-word",
@@ -70,6 +76,7 @@ const StyledTableBodyCell = styled(TableCell)(() => ({
   overflowWrap: "break-word",
 }));
 
+// Styled component per il FormControl con stile personalizzato (es. colore rosso quando è focalizzato)
 const RedFormControl = styled(FormControl)(() => ({
   "& .MuiOutlinedInput-root": {
     "&.Mui-focused fieldset": {
@@ -109,6 +116,7 @@ const recordsOptions = [
 ];
 
 export default function EmployeeListPage() {
+  // Gestione degli stati principali: lista completa, filtri, ordinamento, paginazione
   const [allEmployees, setAllEmployees] = useState<EmployeeListQuery[]>([]);
   const [appliedFilter, setAppliedFilter] = useState("");
   const [searchText, setSearchText] = useState("");
@@ -117,11 +125,15 @@ export default function EmployeeListPage() {
   const [sortColumn, setSortColumn] = useState("firstName");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
+  // Stato per il sottoinsieme fisso degli employee (filtrato e paginato)
   const [fixedSubset, setFixedSubset] = useState<EmployeeListQuery[]>([]);
 
+  // Hook per ottenere la posizione corrente dalla router (utile per triggerare il refetch)
   const location = useLocation();
+  // Hook per gestire il layout responsive (mobile vs desktop)
   const isMobile = useMediaQuery("(max-width:890px)");
 
+  // Funzione per caricare gli employee dalla API
   const loadEmployees = useCallback(() => {
     fetch("/api/employees/list")
       .then((response) => response.json())
@@ -135,6 +147,7 @@ export default function EmployeeListPage() {
       });
   }, []);
 
+  // useEffect per inizializzare e resettare gli stati al cambiamento della location
   useEffect(() => {
     setSearchText("");
     setAppliedFilter("");
@@ -145,12 +158,15 @@ export default function EmployeeListPage() {
     loadEmployees();
   }, [location.key, loadEmployees]);
 
+  // Funzione per applicare il filtro impostato nella search bar
   const applyFilter = () => {
     setAppliedFilter(searchText);
   };
 
+  // useEffect che filtra e ordina la lista completa sulla base del filtro, campo di ricerca, e righe per pagina
   useEffect(() => {
     let list = allEmployees;
+    // Se il filtro non è vuoto, filtra la lista in base al campo selezionato
     if (appliedFilter.trim() !== "") {
       const searchLower = appliedFilter.toLowerCase();
       list = allEmployees.filter((emp) => {
@@ -172,6 +188,7 @@ export default function EmployeeListPage() {
         }
       });
     }
+    // Ordinamento base (ascendente) per definire il sottoinsieme da visualizzare
     const sortedBase = list.slice().sort((a, b) => {
       let fieldA = "";
       let fieldB = "";
@@ -201,9 +218,11 @@ export default function EmployeeListPage() {
       }
       return fieldA.localeCompare(fieldB);
     });
+    // Imposta il sottoinsieme fisso limitato al numero di righe desiderato
     setFixedSubset(sortedBase.slice(0, rowsPerPage));
   }, [allEmployees, appliedFilter, searchField, rowsPerPage, sortColumn]);
 
+  // useMemo per ordinare ulteriormente il sottoinsieme in base all'ordine (asc/desc)
   const sortedSubset = useMemo(() => {
     return fixedSubset.slice().sort((a, b) => {
       let valA = "";
@@ -238,6 +257,7 @@ export default function EmployeeListPage() {
     });
   }, [fixedSubset, sortColumn, sortOrder]);
 
+  // Funzione per esportare il sottoinsieme ordinato in formato XML
   const exportToXML = () => {
     const exportData = sortedSubset;
     const xmlContent = [
@@ -257,6 +277,7 @@ export default function EmployeeListPage() {
       "</employees>",
     ].join("\n");
 
+    // Creazione di un blob e simulazione del download del file XML
     const blob = new Blob([xmlContent], { type: "application/xml" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -268,24 +289,28 @@ export default function EmployeeListPage() {
     window.URL.revokeObjectURL(url);
   };
 
+  // Funzione per gestire il click sull'intestazione per l'ordinamento delle colonne
   const handleSort = (column: string) => {
     if (sortColumn === column) {
+      // Se si clicca la stessa colonna, inverte l'ordine
       setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
     } else {
+      // Altrimenti, imposta la nuova colonna e l'ordine ascendente
       setSortColumn(column);
       setSortOrder("asc");
     }
   };
 
-  // Stile per il TableSortLabel
+  // Restituisce lo stile dinamico per l'etichetta della colonna in base alla colonna ordinata
   const getHeaderLabelStyle = (column: string) => ({
     fontSize: sortColumn === column ? "1.1rem" : "1rem",
     fontWeight: sortColumn === column ? "bold" : "normal",
   });
 
+  // Stile fisso per i bottoni (usato per mantenere dimensioni coerenti)
   const fixedButtonStyle = { minWidth: "120px", height: "55px" };
 
-  // Funzione helper per il rendering dell'email (va a capo dopo la "@")
+  // Funzione helper per il rendering dell'email con interruzione di linea dopo il simbolo "@"
   const renderEmail = (email: string) => {
     if (!email.includes("@")) return email;
     const [username, domain] = email.split("@");
@@ -299,6 +324,7 @@ export default function EmployeeListPage() {
 
   return (
     <>
+      {/* Titolo della pagina */}
       <Typography
         variant="h2"
         sx={{
@@ -317,7 +343,7 @@ export default function EmployeeListPage() {
 
       {isMobile ? (
         <>
-          {/* Prima riga: Field, Search Bar e Filter */}
+          {/* Layout Mobile: Prima riga con Field, Search Bar e Filter */}
           <Box
             sx={{
               display: "flex",
@@ -397,7 +423,7 @@ export default function EmployeeListPage() {
             </Button>
           </Box>
 
-          {/* Seconda riga: Records a sinistra e Export XML a destra */}
+          {/* Layout Mobile: Seconda riga con Records (a sinistra) e Export XML (a destra) */}
           <Box
             sx={{
               display: "flex",
@@ -460,7 +486,7 @@ export default function EmployeeListPage() {
           </Box>
         </>
       ) : (
-        // Layout desktop: una singola riga per tutti gli elementi
+        // Layout Desktop: una singola riga per tutti gli elementi
         <Box
           sx={{
             display: "flex",
@@ -593,6 +619,7 @@ export default function EmployeeListPage() {
         </Box>
       )}
 
+      {/* Tabella degli employee con intestazioni ordinabili */}
       <TableContainer
         component={StyledPaper}
         sx={{ tableLayout: "fixed" }}
