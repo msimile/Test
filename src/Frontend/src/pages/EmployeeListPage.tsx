@@ -81,7 +81,7 @@ const RedFormControl = styled(FormControl)(() => ({
   },
 }));
 
-// Mapping dei colori per ciascun campo del menù
+// Mapping dei colori per ciascun campo del menù "Field"
 const headerColors: { [key: string]: string } = {
   firstName: "#1976d2",
   lastName: "#26cf7a",
@@ -90,7 +90,7 @@ const headerColors: { [key: string]: string } = {
   phone: "#DA212F",
 };
 
-// Mapping per i nomi di visualizzazione
+// Mapping per i nomi di visualizzazione del menù "Field"
 const fieldDisplayNames: { [key: string]: string } = {
   firstName: "First Name",
   lastName: "Last Name",
@@ -98,6 +98,15 @@ const fieldDisplayNames: { [key: string]: string } = {
   email: "Email",
   phone: "Phone",
 };
+
+// Opzioni per il menù "Records" con i colori presi dall'oggetto headerColors
+const recordsOptions = [
+  { value: "10", label: "10", color: headerColors.firstName },
+  { value: "20", label: "20", color: headerColors.lastName },
+  { value: "50", label: "50", color: headerColors.address },
+  { value: "100", label: "100", color: headerColors.email },
+  { value: "all", label: "All", color: headerColors.phone },
+];
 
 export default function EmployeeListPage() {
   const [allEmployees, setAllEmployees] = useState<EmployeeListQuery[]>([]);
@@ -268,7 +277,7 @@ export default function EmployeeListPage() {
     }
   };
 
-  // Funzione helper per determinare lo stile del TableSortLabel - > intestazione più grande e in grassetto
+  // Stile per il TableSortLabel
   const getHeaderLabelStyle = (column: string) => ({
     fontSize: sortColumn === column ? "1.1rem" : "1rem",
     fontWeight: sortColumn === column ? "bold" : "normal",
@@ -276,7 +285,7 @@ export default function EmployeeListPage() {
 
   const fixedButtonStyle = { minWidth: "120px", height: "55px" };
 
-  // Funzione helper per il rendering dell'email -> testo va a capo dopo la @
+  // Funzione helper per il rendering dell'email (va a capo dopo la "@")
   const renderEmail = (email: string) => {
     if (!email.includes("@")) return email;
     const [username, domain] = email.split("@");
@@ -356,9 +365,7 @@ export default function EmployeeListPage() {
 
             <TextField
               placeholder="Type in..."
-              label={
-                isFocused || searchText ? "Search in the selected field" : ""
-              }
+              label={isFocused || searchText ? "Search in the selected field" : ""}
               variant="outlined"
               value={searchText}
               onFocus={() => setIsFocused(true)}
@@ -371,10 +378,9 @@ export default function EmployeeListPage() {
               }}
               sx={{
                 flexGrow: 1,
-                "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
-                  {
-                    borderColor: "#20b96e",
-                  },
+                "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#20b96e",
+                },
                 "& .MuiInputLabel-root.Mui-focused": {
                   color: "#20b96e",
                 },
@@ -416,11 +422,30 @@ export default function EmployeeListPage() {
                   }
                 }}
               >
-                <MenuItem value="10">10</MenuItem>
-                <MenuItem value="20">20</MenuItem>
-                <MenuItem value="50">50</MenuItem>
-                <MenuItem value="100">100</MenuItem>
-                <MenuItem value="all">All</MenuItem>
+                {recordsOptions.map((option) => (
+                  <MenuItem
+                    key={option.value}
+                    value={option.value}
+                    disableRipple
+                    disableTouchRipple
+                    sx={{
+                      "&:hover": {
+                        backgroundColor: option.color,
+                        color: "white",
+                      },
+                      "&.Mui-selected": {
+                        backgroundColor: option.color,
+                        color: "white",
+                      },
+                      "&.Mui-selected:hover": {
+                        backgroundColor: option.color,
+                        color: "white",
+                      },
+                    }}
+                  >
+                    {option.label}
+                  </MenuItem>
+                ))}
               </Select>
             </RedFormControl>
 
@@ -483,9 +508,7 @@ export default function EmployeeListPage() {
 
             <TextField
               placeholder="Type in..."
-              label={
-                isFocused || searchText ? "Search in the selected field" : ""
-              }
+              label={isFocused || searchText ? "Search in the selected field" : ""}
               variant="outlined"
               value={searchText}
               onFocus={() => setIsFocused(true)}
@@ -497,10 +520,9 @@ export default function EmployeeListPage() {
                 }
               }}
               sx={{
-                "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
-                  {
-                    borderColor: "#20b96e",
-                  },
+                "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#20b96e",
+                },
                 "& .MuiInputLabel-root.Mui-focused": {
                   color: "#20b96e",
                 },
@@ -542,11 +564,30 @@ export default function EmployeeListPage() {
                 }
               }}
             >
-              <MenuItem value="10">10</MenuItem>
-              <MenuItem value="20">20</MenuItem>
-              <MenuItem value="50">50</MenuItem>
-              <MenuItem value="100">100</MenuItem>
-              <MenuItem value="all">All</MenuItem>
+              {recordsOptions.map((option) => (
+                <MenuItem
+                  key={option.value}
+                  value={option.value}
+                  disableRipple
+                  disableTouchRipple
+                  sx={{
+                    "&:hover": {
+                      backgroundColor: option.color,
+                      color: "white",
+                    },
+                    "&.Mui-selected": {
+                      backgroundColor: option.color,
+                      color: "white",
+                    },
+                    "&.Mui-selected:hover": {
+                      backgroundColor: option.color,
+                      color: "white",
+                    },
+                  }}
+                >
+                  {option.label}
+                </MenuItem>
+              ))}
             </Select>
           </RedFormControl>
         </Box>
