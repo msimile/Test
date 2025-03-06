@@ -105,7 +105,7 @@ import {
     },
   }));
   
-  // Mapping dei colori per ciascun campo. Per "customerCategory" usiamo il colore #e4740e.
+  // Mapping dei colori per ciascun campo.
   const headerColors: { [key: string]: string } = {
     name: "#1976d2",
     address: "#26cf7a",
@@ -133,12 +133,16 @@ import {
     const [sortColumn, setSortColumn] = useState("name");
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
     const [rowsPerPage, setRowsPerPage] = useState<number>(10);
+    // Stato per il sottoinsieme fisso degli employee (filtrato e paginato)
     const [fixedSubset, setFixedSubset] = useState<CustomerListQuery[]>([]);
     
+    // Hook per ottenere la posizione corrente dalla router (utile per triggerare il refetch)
     const location = useLocation();
+    // Hook per gestire il layout responsive (mobile vs desktop)
     const isMobile = useMediaQuery("(max-width:890px)");
     const fixedButtonStyle = { minWidth: "120px", height: "55px" };
   
+     // Funzione per caricare i customers dalla API
     const loadCustomers = useCallback(() => {
       fetch("/api/customers/list")
         .then((response) => response.json())
@@ -151,6 +155,7 @@ import {
         });
     }, []);
   
+    // useEffect per inizializzare e resettare gli stati al cambiamento della location
     useEffect(() => {
       setSearchText("");
       setAppliedFilter("");
@@ -171,9 +176,10 @@ import {
       return `${code} - ${description}`.trim().toLowerCase();
     };
   
-    // Calcola il sottoinsieme fisso (fixedSubset) ignorando il sortOrder: applica filtro e ordina in ordine ascendente
+    // useEffect che filtra e ordina la lista completa sulla base del filtro, campo di ricerca, e righe per pagina
     useEffect(() => {
       let list = allCustomers;
+      // Se il filtro non è vuoto, filtra la lista in base al campo selezionato
       if (appliedFilter.trim() !== "") {
         const filterLower = appliedFilter.toLowerCase();
         list = allCustomers.filter(
@@ -182,6 +188,7 @@ import {
             cust.email.toLowerCase().includes(filterLower)
         );
       }
+      // Ordinamento base (ascendente) per definire il sottoinsieme da visualizzare
       const sortedBase = list.slice().sort((a, b) => {
         let valA = "";
         let valB = "";
@@ -215,6 +222,7 @@ import {
         }
         return valA.localeCompare(valB);
       });
+      // Imposta il sottoinsieme fisso limitato al numero di righe desiderato
       setFixedSubset(sortedBase.slice(0, rowsPerPage));
     }, [allCustomers, appliedFilter, rowsPerPage, sortColumn]);
   
@@ -223,6 +231,7 @@ import {
       return sortOrder === "asc" ? fixedSubset : fixedSubset.slice().reverse();
     }, [fixedSubset, sortOrder]);
   
+    // Funzione per esportare il sottoinsieme ordinato in formato XML
     const exportToXML = () => {
       const xmlContent = [
         '<?xml version="1.0" encoding="UTF-8"?>',
@@ -248,6 +257,8 @@ import {
         ),
         "</customers>",
       ].join("\n");
+
+      // Creazione di un blob e simulazione del download del file XML
       const blob = new Blob([xmlContent], { type: "application/xml" });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -259,15 +270,19 @@ import {
       window.URL.revokeObjectURL(url);
     };
   
+    // Funzione per gestire il click sull'intestazione per l'ordinamento delle colonne
     const handleSort = (column: string) => {
       if (sortColumn === column) {
+        // Se si clicca la stessa colonna, inverte l'ordine
         setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
       } else {
+        // Altrimenti, imposta la nuova colonna e l'ordine ascendente
         setSortColumn(column);
         setSortOrder("asc");
       }
     };
   
+    // Restituisce lo stile dinamico per l'etichetta della colonna in base alla colonna ordinata
     const getHeaderLabelStyle = (column: string) => ({
       fontSize: sortColumn === column ? "1.1rem" : "1rem",
       fontWeight: sortColumn === column ? "bold" : "normal",
