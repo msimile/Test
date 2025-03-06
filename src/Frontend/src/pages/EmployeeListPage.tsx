@@ -45,7 +45,6 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   marginBottom: theme.spacing(2),
 }));
 
-
 interface HeaderCellProps {
   fixedColor?: string;
 }
@@ -65,15 +64,14 @@ const StyledTableBodyCell = styled(TableCell)(() => ({
   textAlign: "center",
 }));
 
-
 const RedFormControl = styled(FormControl)(() => ({
-  '& .MuiOutlinedInput-root': {
-    '&.Mui-focused fieldset': {
-      borderColor: 'red !important',
+  "& .MuiOutlinedInput-root": {
+    "&.Mui-focused fieldset": {
+      borderColor: "red !important",
     },
   },
-  '& .MuiInputLabel-root.Mui-focused': {
-    color: 'red !important',
+  "& .MuiInputLabel-root.Mui-focused": {
+    color: "red !important",
   },
 }));
 
@@ -82,10 +80,15 @@ export default function EmployeeListPage() {
   const [appliedFilter, setAppliedFilter] = useState("");
   const [searchText, setSearchText] = useState("");
   const [isFocused, setIsFocused] = useState(false);
+  // Campo sul quale effettuare il filtro
   const [searchField, setSearchField] = useState("firstName");
+  // Colonna attualmente usata per l'ordinamento (cliccata dall'utente)
   const [sortColumn, setSortColumn] = useState("firstName");
+  // Ordine di ordinamento: "asc" o "desc"
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
+  // Stato per memorizzare il sottoinsieme "fisso" di record
+  const [fixedSubset, setFixedSubset] = useState<EmployeeListQuery[]>([]);
 
   const location = useLocation();
 
@@ -103,6 +106,7 @@ export default function EmployeeListPage() {
   }, []);
 
   useEffect(() => {
+    // Reset di vari stati ad ogni cambio di location
     setSearchText("");
     setAppliedFilter("");
     setRowsPerPage(10);
@@ -116,37 +120,10 @@ export default function EmployeeListPage() {
     setAppliedFilter(searchText);
   };
 
-  const exportToXML = () => {
-    const exportData = filteredList.slice(0, rowsPerPage);
-    const xmlContent = [
-      '<?xml version="1.0" encoding="UTF-8"?>',
-      "<employees>",
-      ...exportData.map(
-        (emp) =>
-          `  <employee>
-    <id>${emp.id}</id>
-    <firstName>${escapeXml(emp.firstName)}</firstName>
-    <lastName>${escapeXml(emp.lastName)}</lastName>
-    <address>${escapeXml(emp.address)}</address>
-    <email>${escapeXml(emp.email)}</email>
-    <phone>${escapeXml(emp.phone)}</phone>
-  </employee>`
-      ),
-      "</employees>",
-    ].join("\n");
-
-    const blob = new Blob([xmlContent], { type: "application/xml" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "employees.xml";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-  };
-
-  const filteredList = useMemo(() => {
+  // Effettua il filtro in base a searchField e appliedFilter.
+  // Poi ordina la lista risultante in ordine ascendente in base alla colonna attiva (sortColumn)
+  // e fissa il sottoinsieme prendendo solo i primi "rowsPerPage" record.
+  useEffect(() => {
     let list = allEmployees;
     if (appliedFilter.trim() !== "") {
       const searchLower = appliedFilter.toLowerCase();
@@ -169,7 +146,44 @@ export default function EmployeeListPage() {
         }
       });
     }
-    return list.slice().sort((a, b) => {
+    // Ordina in base al campo selezionato da sortColumn in ordine ascendente (baseline)
+    const sortedBase = list.slice().sort((a, b) => {
+      let fieldA = "";
+      let fieldB = "";
+      switch (sortColumn) {
+        case "firstName":
+          fieldA = a.firstName;
+          fieldB = b.firstName;
+          break;
+        case "lastName":
+          fieldA = a.lastName;
+          fieldB = b.lastName;
+          break;
+        case "address":
+          fieldA = a.address;
+          fieldB = b.address;
+          break;
+        case "email":
+          fieldA = a.email;
+          fieldB = b.email;
+          break;
+        case "phone":
+          fieldA = a.phone;
+          fieldB = b.phone;
+          break;
+        default:
+          break;
+      }
+      return fieldA.localeCompare(fieldB);
+    });
+    // Fissa il sottoinsieme: i primi "rowsPerPage" record dalla lista ordinata
+    setFixedSubset(sortedBase.slice(0, rowsPerPage));
+  }, [allEmployees, appliedFilter, searchField, rowsPerPage, sortColumn]);
+
+  // Applica l'ordinamento scelto (asc/desc) sul sottoinsieme fisso.
+  // Questo permette di invertire l'ordine interno dei record senza cambiare il gruppo fisso selezionato.
+  const sortedSubset = useMemo(() => {
+    return fixedSubset.slice().sort((a, b) => {
       let valA = "";
       let valB = "";
       switch (sortColumn) {
@@ -200,12 +214,45 @@ export default function EmployeeListPage() {
       if (valA > valB) return sortOrder === "asc" ? 1 : -1;
       return 0;
     });
-  }, [allEmployees, appliedFilter, searchField, sortColumn, sortOrder]);
+  }, [fixedSubset, sortColumn, sortOrder]);
+
+  const exportToXML = () => {
+    const exportData = sortedSubset;
+    const xmlContent = [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      "<employees>",
+      ...exportData.map(
+        (emp) =>
+          `  <employee>
+    <id>${emp.id}</id>
+    <firstName>${escapeXml(emp.firstName)}</firstName>
+    <lastName>${escapeXml(emp.lastName)}</lastName>
+    <address>${escapeXml(emp.address)}</address>
+    <email>${escapeXml(emp.email)}</email>
+    <phone>${escapeXml(emp.phone)}</phone>
+  </employee>`
+      ),
+      "</employees>",
+    ].join("\n");
+
+    const blob = new Blob([xmlContent], { type: "application/xml" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "employees.xml";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
 
   const handleSort = (column: string) => {
     if (sortColumn === column) {
+      // Se si clicca due volte sulla stessa colonna, inverte l'ordine
       setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
     } else {
+      // Se si clicca su un'altra colonna, la fixedSubset verrà ricostruita (con base ordinata ascendente) 
+      // e l'ordinamento parte da "asc"
       setSortColumn(column);
       setSortOrder("asc");
     }
@@ -257,11 +304,11 @@ export default function EmployeeListPage() {
               }
             }}
             sx={{
-              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                borderColor: '#20b96e',
+              "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                borderColor: "#20b96e",
               },
-              '& .MuiInputLabel-root.Mui-focused': {
-                color: '#20b96e',
+              "& .MuiInputLabel-root.Mui-focused": {
+                color: "#20b96e",
               },
             }}
           />
@@ -356,7 +403,7 @@ export default function EmployeeListPage() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredList.slice(0, rowsPerPage).map((row) => (
+            {sortedSubset.map((row) => (
               <TableRow key={row.id}>
                 <StyledTableBodyCell>{row.firstName}</StyledTableBodyCell>
                 <StyledTableBodyCell>{row.lastName}</StyledTableBodyCell>
