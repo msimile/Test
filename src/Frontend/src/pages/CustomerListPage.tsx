@@ -46,6 +46,18 @@ import {
       .replace(/'/g, "&apos;");
   };
   
+  // Funzione helper per rendere l'email con wrapping: inserisce un <br /> dopo la "@"
+  const renderEmail = (email: string) => {
+    if (!email.includes("@")) return email;
+    const [username, domain] = email.split("@");
+    return (
+      <>
+        {username}
+        <br />@{domain}
+      </>
+    );
+  };
+  
   // Styled component per il Paper che racchiude la tabella
   const StyledPaper = styled(Paper)(({ theme }) => ({
     border: `1px solid ${theme.palette.divider}`,
@@ -59,9 +71,10 @@ import {
     fixedColor?: string;
   }
   
-  // Styled component per le celle dell'intestazione della tabella
+  // Styled component per le celle dell'intestazione della tabella con padding extra
   const StyledTableHeadCell = styled(TableCell)<HeaderCellProps>(
     ({ theme, fixedColor }) => ({
+      padding: theme.spacing(2),
       [`&.${tableCellClasses.head}`]: {
         backgroundColor: fixedColor ? fixedColor : theme.palette.primary.light,
         color: theme.palette.common.white,
@@ -92,14 +105,14 @@ import {
     },
   }));
   
-  // Mapping dei colori per ciascun campo
+  // Mapping dei colori per ciascun campo. Per "customerCategory" usiamo il colore #e4740e.
   const headerColors: { [key: string]: string } = {
     name: "#1976d2",
     address: "#26cf7a",
     email: "#fbbd23",
     phone: "#9c27b0",
     iban: "#DA212F",
-    customerCategory: "#6a1b9a",
+    customerCategory: "#e4740e",
   };
   
   // Opzioni per il selettore "Records"
@@ -112,19 +125,20 @@ import {
   ];
   
   export default function CustomerListPage() {
-    // Stati per gestire i dati, il filtro, l'ordinamento e la paginazione
+    // Stati per i dati, il filtro, l'ordinamento e la paginazione
     const [allCustomers, setAllCustomers] = useState<CustomerListQuery[]>([]);
     const [appliedFilter, setAppliedFilter] = useState("");
     const [searchText, setSearchText] = useState("");
+    const [isFocused, setIsFocused] = useState(false);
     const [sortColumn, setSortColumn] = useState("name");
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
     const [rowsPerPage, setRowsPerPage] = useState<number>(10);
     const [fixedSubset, setFixedSubset] = useState<CustomerListQuery[]>([]);
-  
+    
     const location = useLocation();
     const isMobile = useMediaQuery("(max-width:890px)");
+    const fixedButtonStyle = { minWidth: "120px", height: "55px" };
   
-    // Funzione per caricare i clienti dalla API
     const loadCustomers = useCallback(() => {
       fetch("/api/customers/list")
         .then((response) => response.json())
@@ -137,7 +151,6 @@ import {
         });
     }, []);
   
-    // useEffect per inizializzare gli stati e caricare i dati al cambio di location
     useEffect(() => {
       setSearchText("");
       setAppliedFilter("");
@@ -147,12 +160,18 @@ import {
       loadCustomers();
     }, [location.key, loadCustomers]);
   
-    // Applica il filtro impostato nella search bar
     const applyFilter = () => {
       setAppliedFilter(searchText);
     };
   
-    // Filtra e ordina la lista completa in base al filtro e all'ordinamento scelto
+    // Funzione helper per ottenere la stringa da ordinare per la colonna "customerCategory"
+    const getCustomerCategoryString = (cust: CustomerListQuery) => {
+      const code = cust.customerCategory?.code || "";
+      const description = cust.customerCategory?.description || "";
+      return `${code} - ${description}`.trim().toLowerCase();
+    };
+  
+    // Calcola il sottoinsieme fisso (fixedSubset) ignorando il sortOrder: applica filtro e ordina in ordine ascendente
     useEffect(() => {
       let list = allCustomers;
       if (appliedFilter.trim() !== "") {
@@ -187,6 +206,10 @@ import {
             valA = a.iban.toLowerCase();
             valB = b.iban.toLowerCase();
             break;
+          case "customerCategory":
+            valA = getCustomerCategoryString(a);
+            valB = getCustomerCategoryString(b);
+            break;
           default:
             break;
         }
@@ -195,48 +218,16 @@ import {
       setFixedSubset(sortedBase.slice(0, rowsPerPage));
     }, [allCustomers, appliedFilter, rowsPerPage, sortColumn]);
   
-    // Ordinamento del sottoinsieme in base all'ordine (asc/desc)
+    // Riordina il fixedSubset in base a sortOrder: se discendente, inverte l'ordine
     const sortedSubset = useMemo(() => {
-      return fixedSubset.slice().sort((a, b) => {
-        let valA = "";
-        let valB = "";
-        switch (sortColumn) {
-          case "name":
-            valA = a.name.toLowerCase();
-            valB = b.name.toLowerCase();
-            break;
-          case "address":
-            valA = a.address.toLowerCase();
-            valB = b.address.toLowerCase();
-            break;
-          case "email":
-            valA = a.email.toLowerCase();
-            valB = b.email.toLowerCase();
-            break;
-          case "phone":
-            valA = a.phone.toLowerCase();
-            valB = b.phone.toLowerCase();
-            break;
-          case "iban":
-            valA = a.iban.toLowerCase();
-            valB = b.iban.toLowerCase();
-            break;
-          default:
-            break;
-        }
-        if (valA < valB) return sortOrder === "asc" ? -1 : 1;
-        if (valA > valB) return sortOrder === "asc" ? 1 : -1;
-        return 0;
-      });
-    }, [fixedSubset, sortColumn, sortOrder]);
+      return sortOrder === "asc" ? fixedSubset : fixedSubset.slice().reverse();
+    }, [fixedSubset, sortOrder]);
   
-    // Funzione per esportare il sottoinsieme ordinato in formato XML
     const exportToXML = () => {
-      const exportData = sortedSubset;
       const xmlContent = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         "<customers>",
-        ...exportData.map(
+        ...sortedSubset.map(
           (cust) =>
             `  <customer>
       <id>${cust.id}</id>
@@ -257,7 +248,6 @@ import {
         ),
         "</customers>",
       ].join("\n");
-  
       const blob = new Blob([xmlContent], { type: "application/xml" });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -269,7 +259,6 @@ import {
       window.URL.revokeObjectURL(url);
     };
   
-    // Gestione dell'ordinamento al click sull'intestazione della colonna
     const handleSort = (column: string) => {
       if (sortColumn === column) {
         setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -279,14 +268,10 @@ import {
       }
     };
   
-    // Stile dinamico per l'etichetta della colonna in base a quella ordinata
     const getHeaderLabelStyle = (column: string) => ({
       fontSize: sortColumn === column ? "1.1rem" : "1rem",
       fontWeight: sortColumn === column ? "bold" : "normal",
     });
-  
-    // Stile fisso per i bottoni
-    const fixedButtonStyle = { minWidth: "120px", height: "55px" };
   
     return (
       <>
@@ -297,66 +282,117 @@ import {
             mt: 4,
             mb: 4,
             userSelect: "text",
-            "&::selection": {
-              background: "#26cf7a",
-              color: "white",
-            },
+            "&::selection": { background: "#26cf7a", color: "white" },
           }}
         >
           Customers
         </Typography>
-  
-        {/* Sezione di filtro, selezione record ed esportazione */}
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: isMobile ? "column" : "row",
-            gap: 2,
-            mb: 2,
-            alignItems: "center",
-          }}
-        >
-          <TextField
-            placeholder="Type in..."
-            label={searchText ? "Search (Name or Email)" : ""}
-            variant="outlined"
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                applyFilter();
-              }
-            }}
-            sx={{
-              flexGrow: 1,
-              "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#20b96e",
-              },
-              "& .MuiInputLabel-root.Mui-focused": {
-                color: "#20b96e",
-              },
-            }}
-          />
-  
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={applyFilter}
-            sx={fixedButtonStyle}
-          >
-            Filter
-          </Button>
-  
-          {isMobile ? (
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={exportToXML}
-              sx={fixedButtonStyle}
+        {isMobile ? (
+          <>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                mb: 2,
+                gap: 2,
+              }}
             >
-              Export XML
-            </Button>
-          ) : (
+              <TextField
+                placeholder="Type in..."
+                label={isFocused ? "Search (name or email)" : ""}
+                variant="outlined"
+                fullWidth
+                value={searchText}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                onChange={(e) => setSearchText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") applyFilter(); }}
+                sx={{
+                  "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#20b96e" },
+                  "& .MuiInputLabel-root.Mui-focused": { color: "#20b96e" },
+                }}
+              />
+              <Button variant="contained" color="primary" onClick={applyFilter} sx={fixedButtonStyle}>
+                Filter
+              </Button>
+            </Box>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 2,
+                mb: 2,
+              }}
+            >
+              <RedFormControl variant="outlined" sx={{ minWidth: 150 }}>
+                <InputLabel id="rows-per-page-label">Records</InputLabel>
+                <Select
+                  labelId="rows-per-page-label"
+                  id="rows-per-page"
+                  value={rowsPerPage === Infinity ? "all" : rowsPerPage.toString()}
+                  label="Records"
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setRowsPerPage(value === "all" ? Infinity : parseInt(value));
+                  }}
+                >
+                  {recordsOptions.map((option) => (
+                    <MenuItem
+                      key={option.value}
+                      value={option.value}
+                      disableRipple
+                      disableTouchRipple
+                      sx={{
+                        "&:hover": { backgroundColor: option.color, color: "white" },
+                        "&.Mui-selected": { backgroundColor: option.color, color: "white" },
+                        "&.Mui-selected:hover": { backgroundColor: option.color, color: "white" },
+                      }}
+                    >
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </RedFormControl>
+              <Button variant="contained" color="secondary" onClick={exportToXML} sx={fixedButtonStyle}>
+                Export XML
+              </Button>
+            </Box>
+          </>
+        ) : (
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+              gap: 2,
+            }}
+          >
+            <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+              <TextField
+                placeholder="Type in..."
+                label={isFocused ? "Search (name or email)" : ""}
+                variant="outlined"
+                value={searchText}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                onChange={(e) => setSearchText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") applyFilter(); }}
+                sx={{
+                  width: 300,
+                  "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#20b96e" },
+                  "& .MuiInputLabel-root.Mui-focused": { color: "#20b96e" },
+                }}
+              />
+              <Button variant="contained" color="primary" onClick={applyFilter} sx={fixedButtonStyle}>
+                Filter
+              </Button>
+              <Button variant="contained" color="secondary" onClick={exportToXML} sx={fixedButtonStyle}>
+                Export XML
+              </Button>
+            </Box>
             <RedFormControl variant="outlined" sx={{ minWidth: 150 }}>
               <InputLabel id="rows-per-page-label">Records</InputLabel>
               <Select
@@ -366,11 +402,7 @@ import {
                 label="Records"
                 onChange={(e) => {
                   const value = e.target.value;
-                  if (value === "all") {
-                    setRowsPerPage(Infinity);
-                  } else {
-                    setRowsPerPage(parseInt(value));
-                  }
+                  setRowsPerPage(value === "all" ? Infinity : parseInt(value));
                 }}
               >
                 {recordsOptions.map((option) => (
@@ -380,18 +412,9 @@ import {
                     disableRipple
                     disableTouchRipple
                     sx={{
-                      "&:hover": {
-                        backgroundColor: option.color,
-                        color: "white",
-                      },
-                      "&.Mui-selected": {
-                        backgroundColor: option.color,
-                        color: "white",
-                      },
-                      "&.Mui-selected:hover": {
-                        backgroundColor: option.color,
-                        color: "white",
-                      },
+                      "&:hover": { backgroundColor: option.color, color: "white" },
+                      "&.Mui-selected": { backgroundColor: option.color, color: "white" },
+                      "&.Mui-selected:hover": { backgroundColor: option.color, color: "white" },
                     }}
                   >
                     {option.label}
@@ -399,26 +422,10 @@ import {
                 ))}
               </Select>
             </RedFormControl>
-          )}
-  
-          {!isMobile && (
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={exportToXML}
-              sx={fixedButtonStyle}
-            >
-              Export XML
-            </Button>
-          )}
-        </Box>
-  
-        {/* Tabella per la visualizzazione dei clienti */}
-        <TableContainer
-          component={StyledPaper}
-          sx={{ tableLayout: "fixed" }}
-          aria-label="customer table"
-        >
+          </Box>
+        )}
+    
+        <TableContainer component={StyledPaper} sx={{ tableLayout: "fixed", mt: 3 }} aria-label="customer table">
           <Table sx={{ minWidth: 650, tableLayout: "fixed" }} aria-label="customer table">
             <TableHead>
               <TableRow>
@@ -473,7 +480,14 @@ import {
                   </TableSortLabel>
                 </StyledTableHeadCell>
                 <StyledTableHeadCell fixedColor={headerColors.customerCategory}>
-                  Customer Category
+                  <TableSortLabel
+                    active={sortColumn === "customerCategory"}
+                    direction={sortColumn === "customerCategory" ? sortOrder : "asc"}
+                    onClick={() => handleSort("customerCategory")}
+                    style={getHeaderLabelStyle("customerCategory")}
+                  >
+                    Category
+                  </TableSortLabel>
                 </StyledTableHeadCell>
               </TableRow>
             </TableHead>
@@ -482,7 +496,7 @@ import {
                 <TableRow key={row.id}>
                   <StyledTableBodyCell>{row.name}</StyledTableBodyCell>
                   <StyledTableBodyCell>{row.address}</StyledTableBodyCell>
-                  <StyledTableBodyCell>{row.email}</StyledTableBodyCell>
+                  <StyledTableBodyCell>{renderEmail(row.email)}</StyledTableBodyCell>
                   <StyledTableBodyCell>{row.phone}</StyledTableBodyCell>
                   <StyledTableBodyCell>{row.iban}</StyledTableBodyCell>
                   <StyledTableBodyCell>
